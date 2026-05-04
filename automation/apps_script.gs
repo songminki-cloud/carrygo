@@ -77,13 +77,14 @@ function buildReservationRow(body) {
 }
 
 function calculateAmount_(body) {
-  const bagText = String(body.bag_count || '1');
-  const bags = bagText.includes('3') ? 3 : bagText.includes('2') ? 2 : 1;
+  const carriers = Number(body.carrier_count || 1);
+  const extra = Number(body.extra_bag_count || 0);
+  const nextDay = body.next_day_drop === 'yes';
   const method = String(body.payment || body.payment_method || '').toLowerCase();
   const paypal = method.includes('paypal') || method.includes('international');
-  // 온라인 기준: 1개 15000원/$15, 추가 가방 10000원/$10. 익일 반납은 운영자가 별도 선택/수정.
-  if (paypal) return 15 + Math.max(0, bags - 1) * 10;
-  return 15000 + Math.max(0, bags - 1) * 10000;
+  // 온라인 기준: 캐리어 1개 15000원/$15, 추가 가방 10000원/$10, 익일 드랍 20000원/$20.
+  if (paypal) return carriers * 15 + extra * 10 + (nextDay ? 20 : 0);
+  return carriers * 15000 + extra * 10000 + (nextDay ? 20000 : 0);
 }
 
 function nextBookingNo_(eventDate) {
