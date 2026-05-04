@@ -38,7 +38,7 @@
 <footer><div class="wrap"><strong>CarryGo</strong><br>올림픽공원역 일대 · KSPO Dome 공연일 운영<br>문의: carrygo.seoul@gmail.com · 긴급 연락처는 예약 확정 고객에게 별도 안내<div class="legal">CarryGo는 일시 수하물 보관 대행 서비스입니다. 화물 운송 또는 고객 운송 서비스가 아닙니다. 시범운영 기간에는 책임배상보험 미가입 상태이며, 분실 시 최대 300,000원, 캐리어 외관 파손 시 최대 50,000원을 현금 배상합니다. 보관 불가 품목 및 내부 물품은 배상 대상에서 제외됩니다.</div></div></footer>
 <script>
 document.querySelectorAll('.lang').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.lang').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(b.dataset.lang!=='ko')alert('외국어 버전은 국문 최종안 확정 후 업데이트 예정입니다.');}));
-const GOOGLE_SCRIPT_URL='https://script.google.com/macros/s/AKfycbyWazV2Bwyex0hyUG17615cCd4zFLnBOPABVv9wQ4AoVltXFrZ8Qh5ncPQtEW-c9ZFs/exec';
+const GOOGLE_SCRIPT_URL='https://script.google.com/macros/s/AKfycbxSkzXzGBx6p5xXmGqoGyNSA7V0oWD5Gy8VmoaWCI4en3I6eZU0ZwR_fCdUgYC1Cy-Qzg/exec';
 function calculateCarryGoAmount(data){
  const carriers=Number(data.carrier_count||1);
  const extra=Number(data.extra_bag_count||0);
