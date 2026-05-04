@@ -79,7 +79,7 @@ function buildReservationRow(body) {
 function calculateAmount_(body) {
   const carriers = Number(body.carrier_count || 1);
   const extra = Number(body.extra_bag_count || 0);
-  const nextDay = body.next_day_drop === 'yes';
+  const nextDay = String(body.return_preference || '').includes('익일');
   const method = String(body.payment || body.payment_method || '').toLowerCase();
   const paypal = method.includes('paypal') || method.includes('international');
   // 온라인 기준: 캐리어 1개 15000원/$15, 추가 가방 10000원/$10, 익일 드랍 20000원/$20.
