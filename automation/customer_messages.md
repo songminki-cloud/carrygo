@@ -26,7 +26,7 @@ https://qr.kakaopay.com/FOzMisaMr
 예: CG-0529-001
 
 ※ 송금 이후 고객 변심으로 인한 취소 및 환불은 불가합니다.
-※ 안내 후 2시간 이내 결제 확인이 되지 않으면 신청은 자동 취소될 수 있습니다.
+※ 시간, 수량, 결제방식을 변경하려면 기존 신청을 결제하지 말고 새로 신청해 주세요.
 ```
 
 ## 해외 고객 — PayPal Invoice
@@ -45,6 +45,6 @@ Please complete your payment through the PayPal invoice link below:
 [PayPal invoice link]
 
 Your reservation is confirmed only after payment is completed.
-Payment must be completed within 2 hours after receiving this message.
+Payment must be completed within 2 hours after receiving this message. If you need to change your time, quantity, or payment method before payment, please do not pay for the current request and submit a new request.
 Payments are non-refundable after confirmation, except when the event is cancelled or CarryGo cannot provide the service.
 ```
