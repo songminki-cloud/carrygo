@@ -12,9 +12,12 @@
 const SHEET_NAME = 'reservations';
 const HEADERS = [
   'created_at','booking_no','status','event_date','name','email','phone','language',
-  'bag_count','pickup_preference','return_preference','flexibility','payment_method',
-  'currency','amount_due','payment_link','invoice_id','paid_at','paid_amount',
-  'payment_status','operator_note'
+  'bag_count','pickup_preference','return_preference','payment_method',
+  'currency','amount_due','payment_link',
+  'confirmed_pickup_time','confirmed_return_time','pickup_location','return_location',
+  'time_offer_sent_at','payment_request_sent_at','payment_due_at',
+  'invoice_id','paid_at','paid_amount','payment_status','confirmation_sent_at',
+  'operator_note'
 ];
 
 function setupCarryGoSheet() {
@@ -53,15 +56,22 @@ function buildReservationRow(body) {
     body.bag_count || '',
     body.pickup_preference || '',
     body.return_preference || '',
-    body.flexibility || '',
     method,
     currency,
     amount,
     currency === 'KRW' ? kakao : '',
-    '',
-    '',
-    '',
+    '', // confirmed_pickup_time
+    '', // confirmed_return_time
+    '', // pickup_location
+    '', // return_location
+    '', // time_offer_sent_at
+    '', // payment_request_sent_at
+    '', // payment_due_at
+    '', // invoice_id
+    '', // paid_at
+    '', // paid_amount
     'UNPAID',
+    '', // confirmation_sent_at
     body.note || ''
   ];
 }
