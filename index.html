@@ -1,10 +1,10 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CARRYGO Seoul — Concert Luggage Care</title>
-<meta name="description" content="CARRYGO Seoul. 콘서트 관객을 위한 짐 픽업 & 드랍 서비스. 캐리어는 맡기고 공연에만 집중하세요.">
+<meta name="description" content="CARRYGO Seoul. 콘서트 관객을 위한 짐 픽업 &amp; 드랍 서비스. 캐리어는 맡기고 공연에만 집중하세요.">
 <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,7 +25,7 @@
     <section class="hero">
       <div class="kicker">Concert luggage care · Seoul</div>
       <h1>Leave it.<br>Enjoy the show.<br>Pick it up.</h1>
-      <p>공연 전 캐리어를 맡기고, 공연 후 같은 번호로 안전하게 찾아가세요. CARRYGO는 콘서트 현장 전용 짐 픽업 & 드랍 서비스입니다.</p>
+      <p>공연 전 캐리어를 맡기고, 공연 후 같은 번호로 안전하게 찾아가세요. CARRYGO는 콘서트 현장 전용 짐 픽업 &amp; 드랍 서비스입니다.</p>
       <div class="cta-row"><a class="btn primary" href="#reserve">Reserve Bag Drop</a><a class="btn secondary" href="#how">How it works</a></div>
     </section>
 
@@ -39,8 +39,8 @@
 
     <section class="step-grid section desktop-span" id="how" aria-label="service steps">
       <div class="step"><div class="num">1</div><div><strong>Reserve</strong><small>신청 후 결제 안내</small></div></div>
-      <div class="step"><div class="num">2</div><div><strong>Show QR</strong><small>현장에서 QR 확인</small></div></div>
-      <div class="step"><div class="num">3</div><div><strong>Pickup</strong><small>태그 번호 확인 후 수령</small></div></div>
+      <div class="step"><div class="num">2</div><div><strong>Pay</strong><small>6시간 내 Base Fee 결제</small></div></div>
+      <div class="step"><div class="num">3</div><div><strong>Show QR</strong><small>현장 QR + 태그 확인</small></div></div>
     </section>
 
     <section class="ticket-mini section desktop-span">
@@ -55,7 +55,7 @@
         <div class="price-line"><div><div class="row-label">Extra Bag</div><div class="row-value">Onsite cash only</div></div><strong>₩10,000</strong></div>
         <div class="price-line"><div><div class="row-label">Next-day Pickup</div><div class="row-value">10:00–12:00</div></div><strong>₩20,000<br><small>$15</small></strong></div>
       </div>
-      <div class="note section">Base Fee includes 1 suitcase, same-day pickup & drop, pickup within 2 hours after the concert, up to 28 inches / 23kg.</div>
+      <div class="note section">Base Fee includes 1 suitcase, same-day pickup &amp; drop, pickup within 2 hours after the concert, up to 28 inches / 23kg. Payment should be confirmed within 6 hours after submission.</div>
     </section>
 
     <section class="section desktop-span">
@@ -63,7 +63,7 @@
       <div class="rule-list desktop-columns">
         <div class="rule">추가 가방/쇼핑백은 현장 현금 결제입니다. 한화가 없으면 1개당 $10 현금 결제가 가능합니다.</div>
         <div class="rule">공연 종료 후 2시간 이내 수령하지 못하면 익일 수령으로 전환됩니다.</div>
-        <div class="rule">결제 후 고객 변심 취소 및 노쇼는 환불되지 않습니다.</div>
+        <div class="rule">결제 후 고객 변심 취소 및 노쇼는 환불되지 않습니다. 공연 취소 또는 CarryGo 운영 사정으로 서비스 제공이 불가한 경우 전액 환불됩니다.</div>
         <div class="rule">러기지택 번호와 짐 부착 태그 번호가 일치해야 짐을 받을 수 있습니다.</div>
       </div>
     </section>
@@ -71,23 +71,23 @@
     <section class="section desktop-span" id="reserve">
       <div class="section-title"><h2>Book bag drop</h2><span>Reservation</span></div>
       <form class="form-card" id="carrygoForm">
-        <div class="field"><label>Concert</label><select name="concert_id" id="concertSelect" required><option value="shinee_world_vii">SHINee WORLD VII</option></select></div>
-        <div class="field"><label>Concert Date</label><select name="concert_date_id" id="dateSelect" required><option value="shinee_20260530">2026-05-30 19:00</option><option value="shinee_20260531">2026-05-31 18:00</option><option value="shinee_20260601">2026-06-01 17:00</option></select></div>
-        <div class="field"><label>Country</label><select name="customer_country" id="countrySelect" required><option value="Korea" data-code="+82">Korea</option><option value="Japan" data-code="+81">Japan</option><option value="USA" data-code="+1">USA</option><option value="China" data-code="+86">China</option><option value="Hong Kong" data-code="+852">Hong Kong</option><option value="Taiwan" data-code="+886">Taiwan</option><option value="Singapore" data-code="+65">Singapore</option><option value="Thailand" data-code="+66">Thailand</option><option value="Other" data-code="+">Other</option></select></div>
-        <div class="field"><label>Country Code</label><input name="country_code" id="countryCode" required value="+82" placeholder="+82"></div>
-        <div class="field"><label>Name in English</label><input name="customer_name" required placeholder="MINJI KIM"></div>
-        <div class="field"><label>Email</label><input name="customer_email" type="email" required placeholder="you@example.com"></div>
-        <div class="field"><label>Phone Number</label><input name="phone_number" inputmode="tel" required placeholder="010-0000-0000"></div>
-        <div class="field"><label>Payment Method</label><select name="payment_method" required><option value="KAKAOPAY">KakaoPay · ₩20,000</option><option value="PAYPAL">PayPal · $15</option><option value="BANK">Need bank transfer?</option></select></div>
-        <div class="field"><label>Suitcase</label><select name="expected_suitcase_count" required><option value="1">1 suitcase</option><option value="2">2 suitcases</option><option value="3">3 suitcases</option></select></div>
-        <div class="field"><label>Extra Bag</label><select name="expected_extra_bag_count" required><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></div>
-        <div class="field full"><label>Note</label><textarea name="note" placeholder="Optional"></textarea></div>
-        <label class="agree"><input type="checkbox" required><span>Base Fee 포함 범위와 추가 짐 현장 현금 결제 정책을 확인했습니다.</span></label>
+        <div class="field"><label for="concertSelect">Concert</label><select name="concert_id" id="concertSelect" required><option value="shinee_world_vii">SHINee WORLD VII</option></select></div>
+        <div class="field"><label for="dateSelect">Concert Date</label><select name="concert_date_id" id="dateSelect" required><option value="shinee_20260530">2026-05-30 19:00</option><option value="shinee_20260531">2026-05-31 18:00</option><option value="shinee_20260601">2026-06-01 17:00</option></select></div>
+        <div class="field"><label for="countrySelect">Country</label><select name="customer_country" id="countrySelect" required><option value="Korea" data-code="+82">Korea</option><option value="Japan" data-code="+81">Japan</option><option value="USA" data-code="+1">USA</option><option value="China" data-code="+86">China</option><option value="Hong Kong" data-code="+852">Hong Kong</option><option value="Taiwan" data-code="+886">Taiwan</option><option value="Singapore" data-code="+65">Singapore</option><option value="Thailand" data-code="+66">Thailand</option><option value="Other" data-code="+">Other</option></select></div>
+        <div class="field"><label for="countryCode">Country Code</label><input type="text" name="country_code" id="countryCode" required value="+82" placeholder="+82"></div>
+        <div class="field"><label for="customerName">Name in English</label><input type="text" name="customer_name" id="customerName" required placeholder="MINJI KIM"></div>
+        <div class="field"><label for="customerEmail">Email</label><input name="customer_email" id="customerEmail" type="email" required placeholder="you@example.com"></div>
+        <div class="field"><label for="phoneNumber">Phone Number</label><input type="tel" name="phone_number" id="phoneNumber" inputmode="tel" required placeholder="010-0000-0000"></div>
+        <div class="field"><label for="paymentMethod">Payment Method</label><select name="payment_method" id="paymentMethod" required><option value="KAKAOPAY">KakaoPay · ₩20,000</option><option value="PAYPAL">PayPal · $15</option><option value="BANK">Need bank transfer?</option></select></div>
+        <div class="field"><label for="suitcaseCount">Suitcase</label><select name="expected_suitcase_count" id="suitcaseCount" required><option value="1">1 suitcase · included</option><option value="2">2 suitcases · extra onsite check</option><option value="3">3 suitcases · extra onsite check</option></select></div>
+        <div class="field"><label for="extraBagCount">Extra Bag</label><select name="expected_extra_bag_count" id="extraBagCount" required><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></div>
+        <div class="field full"><label for="note">Note</label><textarea name="note" id="note" placeholder="Optional"></textarea></div>
+        <label class="agree"><input type="checkbox" required><span>Base Fee는 캐리어 1개 기준이며, 추가 짐/추가 캐리어는 현장 확인 및 현금 결제 대상임을 확인했습니다.</span></label>
         <label class="agree"><input type="checkbox" required><span>결제 후 고객 변심 취소 및 노쇼는 환불되지 않음을 확인했습니다.</span></label>
         <div class="submit-wrap"><button class="btn primary full" type="submit">Create claim ticket</button></div>
         <div class="result" id="resultBox"></div>
       </form>
-      <div class="note" id="formMsg">신청 후 선택한 결제수단에 맞춘 결제 안내메일이 발송됩니다.</div>
+      <div class="note" id="formMsg">신청 후 선택한 결제수단에 맞춘 결제 안내메일이 발송됩니다. 6시간 이내 결제 확인 시 예약이 확정됩니다.</div>
     </section>
   </div>
   <div class="bottom-space"></div>
