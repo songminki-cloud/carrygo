@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CarryGo Admin</title>
+<link rel="stylesheet" href="css/tokens.css">
+<style>
+*{box-sizing:border-box}body{margin:0;background:var(--cg-warm-paper);color:var(--cg-ink);font-family:var(--font-sans);-webkit-font-smoothing:antialiased}.page{max-width:560px;margin:0 auto;padding:16px}.card{background:#fff;border:2px solid #111;border-radius:18px;padding:18px;margin-bottom:14px}h1{font-size:34px;line-height:.95;margin:0 0 10px;font-weight:900;letter-spacing:-.04em}p{font-size:14px;color:#555;line-height:1.45;margin:0 0 14px}.logo{width:176px;height:auto;margin-bottom:12px}.label{display:block;font-size:11px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:#736f68;margin:12px 0 6px}input[type=password]{width:100%;border:1.4px solid #d8d1c7;border-radius:12px;padding:14px;font-size:18px;font-weight:800}button{width:100%;border:0;border-radius:999px;background:#050505;color:#fff;padding:15px 12px;font-size:15px;font-weight:900;margin-top:12px}button.secondary{background:#fff;color:#111;border:1.6px solid #111}button:disabled{opacity:.42}.row{border:1.4px solid #d8d1c7;border-radius:14px;padding:14px;margin-top:10px;background:#fff;display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:start}.row input{width:24px;height:24px;margin-top:4px}.rid{font-size:23px;font-weight:900;letter-spacing:-.03em}.meta{font-size:13px;color:#555;line-height:1.45;margin-top:5px}.msg{font-size:13px;font-weight:800;margin-top:10px;color:#736f68;white-space:pre-wrap}.err{background:#fff3f0;border:1px solid #f1b8ac;border-radius:12px;color:#8f3c32;padding:12px}.ok{background:#ecfff7;border:1px solid #10b981;border-radius:12px;color:#065f46;padding:12px}.toolbar{position:sticky;bottom:0;background:var(--cg-warm-paper);padding:10px 0 4px;margin-top:10px}.hidden{display:none}.count{display:inline-block;background:#111;color:#fff;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:900;margin-left:6px}
+</style>
+</head>
+<body>
+<main class="page">
+  <section class="card">
+    <img class="logo" src="assets/logo/carrygo_logo_final.png" alt="CarryGo Seoul">
+    <h1>CarryGo<br>Admin</h1>
+    <p>UNPAID 예약을 불러온 뒤 선택해서 입금확인 처리합니다. 처리 즉시 QR 확정메일이 발송됩니다.</p>
+    <label class="label" for="pin">Admin PIN</label>
+    <input id="pin" type="password" placeholder="PIN" autocomplete="current-password">
+    <button id="loadBtn" type="button">Load UNPAID</button>
+    <button id="selectAllBtn" class="secondary hidden" type="button">Select All / 전체선택</button>
+    <div id="msg" class="msg"></div>
+  </section>
+  <section id="list"></section>
+  <section class="toolbar hidden" id="toolbar">
+    <button id="confirmBtn" type="button" disabled>Confirm Selected / 선택 입금확인 <span id="selectedCount" class="count">0</span></button>
+  </section>
+</main>
+<script>
+const API='https://script.google.com/macros/s/AKfycbyWazV2Bwyex0hyUG17615cCd4zFLnBOPABVv9wQ4AoVltXFrZ8Qh5ncPQtEW-c9ZFs/exec';
+const pinEl=document.getElementById('pin'), msgEl=document.getElementById('msg'), listEl=document.getElementById('list'), toolbar=document.getElementById('toolbar'), confirmBtn=document.getElementById('confirmBtn'), selectedCount=document.getElementById('selectedCount'), selectAllBtn=document.getElementById('selectAllBtn'), loadBtn=document.getElementById('loadBtn');
+function setMsg(text,type='msg'){msgEl.className=type;msgEl.textContent=text||''}function setBusy(b){[loadBtn,selectAllBtn,confirmBtn].forEach(x=>x.disabled=b)}function pin(){return pinEl.value.trim()}function esc(v){return String(v||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
+async function fetchJson(url){const res=await fetch(url,{cache:'no-store'});const text=await res.text();try{return JSON.parse(text)}catch(e){throw new Error(text.slice(0,500))}}
+async function loadUnpaid(){setMsg('Loading...');setBusy(true);listEl.innerHTML='';toolbar.classList.add('hidden');selectAllBtn.classList.add('hidden');try{const data=await fetchJson(API+'?mode=admin_list_unpaid&admin_pin='+encodeURIComponent(pin()));if(!data.ok)throw new Error(data.error||'Failed');renderRows(data.reservations||[]);setMsg(data.reservations&&data.reservations.length?`${data.reservations.length} unpaid reservation(s).`:'No UNPAID reservations.','ok')}catch(e){setMsg(e.message||String(e),'err')}finally{setBusy(false);updateSelection()}}
+function renderRows(rows){if(!rows.length){listEl.innerHTML='<div class="card ok">No UNPAID reservations.</div>';return}listEl.innerHTML=rows.map(r=>`<label class="row"><input type="checkbox" class="pick" value="${esc(r.reservation_id)}"><div><div class="rid">${esc(r.reservation_id)}</div><div class="meta">${esc(r.customer_name)} · ${esc(r.customer_email)}<br>${esc(r.concert_date)} ${esc(r.concert_time)} · ${esc(r.payment_method)} · ${esc(r.amount_display)}<br>Due: ${esc(r.payment_due_at||'')}</div></div></label>`).join('');toolbar.classList.remove('hidden');selectAllBtn.classList.remove('hidden');document.querySelectorAll('.pick').forEach(cb=>cb.addEventListener('change',updateSelection))}
+function selectedIds(){return Array.from(document.querySelectorAll('.pick:checked')).map(cb=>cb.value)}function updateSelection(){const n=selectedIds().length;selectedCount.textContent=n;confirmBtn.disabled=n===0}function selectAll(){document.querySelectorAll('.pick').forEach(cb=>cb.checked=true);updateSelection()}
+async function confirmSelected(){const ids=selectedIds();if(!ids.length)return;if(!confirm(ids.join(', ')+' 입금확인 처리할까요?'))return;setBusy(true);setMsg('Confirming...\n'+ids.join('\n'));try{const url=API+'?mode=admin_confirm_payment&admin_pin='+encodeURIComponent(pin())+'&reservation_id='+encodeURIComponent(ids.join(','));const data=await fetchJson(url);if(!data.ok)throw new Error(data.error||'Failed');setMsg('입금확인 완료 / QR emails sent:\n'+ids.join('\n'),'ok');await loadUnpaid()}catch(e){setMsg(e.message||String(e),'err')}finally{setBusy(false);updateSelection()}}
+loadBtn.addEventListener('click',loadUnpaid);selectAllBtn.addEventListener('click',selectAll);confirmBtn.addEventListener('click',confirmSelected);pinEl.addEventListener('keydown',e=>{if(e.key==='Enter')loadUnpaid()});
+</script>
+</body>
+</html>
