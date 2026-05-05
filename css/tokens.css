@@ -1,0 +1,31 @@
+:root {
+  --cg-black: #050505;
+  --cg-ink: #111111;
+  --cg-charcoal: #262626;
+  --cg-paper: #ffffff;
+  --cg-warm-paper: #f7f4ef;
+  --cg-line: #d8d1c7;
+  --cg-muted: #736f68;
+  --cg-muted-red: #8f3c32;
+  --cg-soft-black: #171717;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+
+  --radius-s: 8px;
+  --radius-m: 12px;
+  --radius-l: 18px;
+  --radius-xl: 24px;
+
+  --font-sans: Inter, Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", Arial, sans-serif;
+  --letter-wide: .18em;
+  --letter-mid: .10em;
+
+  --shadow-none: none;
+}
