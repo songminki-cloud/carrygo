@@ -1132,28 +1132,33 @@ function buildPaymentInstructionEmailBodyFinal_(r) {
 function buildPaymentInstructionEmailHtmlFinal_(r) {
   const paymentBlock = buildPaymentInstructionEmailPaymentBlockFinal_(r);
   const amount = formatAmountDisplayFinal_(r);
+  const amountText = String(amount || '').replace('₩', '') + (String(amount || '').indexOf('₩') === 0 ? '원' : '');
   const reservationId = escapeHtmlFinal_(r.reservation_id);
-  const kakaoNotice = String(r.payment_method || '').toUpperCase() === 'KAKAOPAY'
-    ? '<div style="margin-top:14px;padding:14px;border:2px solid #b00020;border-radius:14px;background:#fff3f0;color:#b00020;font-size:16px;line-height:1.5;font-weight:900;">카카오페이 송금 화면에서 <span style="font-size:22px;">20000</span>을 직접 입력해 주세요.<br>송금 메모/메시지에는 예약번호 <span style="font-size:18px;">' + reservationId + '</span>를 입력해 주세요.</div>'
-    : '<div style="margin-top:14px;padding:14px;border:1px solid #ddd;border-radius:14px;background:#fafafa;color:#333;font-size:15px;line-height:1.5;font-weight:800;">결제 메모에 예약번호 ' + reservationId + '를 입력해 주세요.</div>';
+  const isKakao = String(r.payment_method || '').toUpperCase() === 'KAKAOPAY';
+  const notice = isKakao
+    ? '<div style="margin-top:14px;padding:13px 14px;border:1.5px solid #b00020;border-radius:12px;background:#fff7f5;color:#8f1d1d;font-size:14px;line-height:1.55;font-weight:800;">카카오페이에서 금액이 자동 입력되지 않을 수 있습니다.<br>송금 화면에서 <strong>20000</strong>을 직접 입력하고, 송금 메모/메시지에 <strong>' + reservationId + '</strong>를 입력해 주세요.</div>'
+    : '<div style="margin-top:14px;padding:13px 14px;border:1px solid #ddd;border-radius:12px;background:#fafafa;color:#333;font-size:14px;line-height:1.55;font-weight:750;">결제 메모에 예약번호 <strong>' + reservationId + '</strong>를 입력해 주세요.</div>';
 
   return [
     '<div style="margin:0;padding:0;background:#f7f2ea;font-family:Arial,\'Apple SD Gothic Neo\',\'Noto Sans KR\',sans-serif;color:#111;">',
     '<div style="max-width:560px;margin:0 auto;padding:18px;">',
-    '<div style="background:#fff;border:2px solid #111;border-radius:18px;padding:20px;">',
-    '<div style="font-size:13px;font-weight:900;letter-spacing:.08em;color:#b00020;margin-bottom:8px;">예약 확정 전입니다</div>',
-    '<div style="font-size:26px;line-height:1.16;font-weight:950;letter-spacing:-.04em;margin-bottom:12px;">예약을 확정하려면<br><span style="font-size:40px;">' + escapeHtmlFinal_(amount) + '</span><br>결제해 주세요.</div>',
-    '<div style="font-size:16px;line-height:1.5;color:#444;font-weight:800;margin-bottom:18px;">결제 확인 후 QR 코드와 짐 맡기기/찾기 안내 링크를 이메일로 보내드립니다.</div>',
-    '<div style="display:block;border:2px solid #111;border-radius:16px;padding:16px;margin-bottom:14px;background:#fff;">',
-    '<div style="font-size:12px;font-weight:900;color:#777;letter-spacing:.12em;text-transform:uppercase;">결제금액 / Payment Amount</div>',
-    '<div style="font-size:44px;line-height:1;font-weight:950;letter-spacing:-.05em;margin:7px 0 14px;">' + escapeHtmlFinal_(amount) + '</div>',
-    '<div style="font-size:15px;line-height:1.55;font-weight:850;">결제방법: ' + escapeHtmlFinal_(paymentBlock.methodLabel) + '<br>송금메모/메시지: <span style="font-size:19px;font-weight:950;">' + reservationId + '</span></div>',
+    '<div style="background:#fff;border:1.5px solid #111;border-radius:18px;padding:20px;">',
+    '<div style="font-size:13px;font-weight:900;letter-spacing:.06em;color:#8f1d1d;margin-bottom:10px;">신청이 접수되었습니다</div>',
+    '<div style="font-size:24px;line-height:1.28;font-weight:900;letter-spacing:-.035em;margin-bottom:10px;">예약 확정을 위해<br>기본 이용료를 결제해 주세요.</div>',
+    '<div style="font-size:15px;line-height:1.55;color:#444;font-weight:750;margin-bottom:18px;">결제 확인 후 QR 코드와 짐 맡기기/찾기 안내 링크를 이메일로 보내드립니다.</div>',
+    '<div style="border:1.5px solid #111;border-radius:14px;padding:15px;background:#fff;margin-bottom:14px;">',
+    '<div style="font-size:12px;font-weight:900;color:#777;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px;">Payment</div>',
+    '<div style="font-size:17px;line-height:1.7;font-weight:850;">',
+    '결제금액: <span style="font-size:24px;font-weight:950;">' + escapeHtmlFinal_(amountText) + '</span><br>',
+    '결제방법: ' + escapeHtmlFinal_(paymentBlock.methodLabel) + '<br>',
+    '송금메모/메시지: <span style="font-size:18px;font-weight:950;">' + reservationId + '</span>',
     '</div>',
-    kakaoNotice,
-    paymentBlock.link ? '<a href="' + escapeHtmlFinal_(paymentBlock.link || '') + '" style="display:block;text-align:center;background:#111;color:#fff;text-decoration:none;border-radius:999px;padding:17px 14px;font-size:18px;font-weight:950;margin:16px 0;">' + escapeHtmlFinal_(paymentBlock.buttonLabel || '결제하기') + '</a>' : '',
-    '<div style="margin-top:22px;border-top:1px solid #ddd;padding-top:16px;">',
-    '<div style="font-size:16px;font-weight:950;margin-bottom:8px;">예약 정보</div>',
-    '<div style="font-size:14px;line-height:1.65;color:#333;font-weight:750;">',
+    '</div>',
+    notice,
+    paymentBlock.link ? '<a href="' + escapeHtmlFinal_(paymentBlock.link || '') + '" style="display:block;text-align:center;background:#111;color:#fff;text-decoration:none;border-radius:999px;padding:15px 14px;font-size:17px;font-weight:900;margin:16px 0;">' + escapeHtmlFinal_(paymentBlock.buttonLabel || '결제하기') + '</a>' : '',
+    '<div style="margin-top:20px;border-top:1px solid #ddd;padding-top:15px;">',
+    '<div style="font-size:15px;font-weight:900;margin-bottom:8px;">예약 정보</div>',
+    '<div style="font-size:14px;line-height:1.65;color:#333;font-weight:700;">',
     '예약번호: ' + reservationId + '<br>',
     '콘서트: ' + escapeHtmlFinal_(r.concert_title) + '<br>',
     '공연일: ' + escapeHtmlFinal_(r.concert_date + ' ' + r.concert_time) + '<br>',
@@ -1161,7 +1166,7 @@ function buildPaymentInstructionEmailHtmlFinal_(r) {
     '짐 맡기는 시간: ' + escapeHtmlFinal_(r.pickup_time || '') + ' <span style="color:#777;">(선택 시간 30분 전부터 정시까지)</span>',
     '</div>',
     '</div>',
-    '<div style="margin-top:16px;font-size:13px;line-height:1.55;color:#666;font-weight:700;">포함 사항: 캐리어 1개 / 선택 시간 짐 맡기기 / 공연 종료 후 2시간 이내 수령<br>추가 짐은 현장 현금 결제입니다. 추가 가방·쇼핑백 1개당 ₩10,000 / 한화가 없으면 $10.</div>',
+    '<div style="margin-top:15px;font-size:12px;line-height:1.55;color:#666;font-weight:650;">포함 사항: 캐리어 1개 / 선택 시간 짐 맡기기 / 공연 종료 후 2시간 이내 수령<br>추가 짐은 현장 현금 결제입니다. 추가 가방·쇼핑백 1개당 10,000원 / 한화가 없으면 $10.</div>',
     '</div>',
     '<div style="font-size:12px;color:#777;line-height:1.5;margin-top:14px;text-align:center;">CarryGo</div>',
     '</div>',
