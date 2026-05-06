@@ -556,7 +556,7 @@ function createWalkinReservationFinal(body) {
     const now = new Date();
     const concert = findActiveConcertFinal_(body.concert_id);
     const concertDate = findActiveConcertDateFinal_(body.concert_date_id, concert.concert_id);
-    const reservationId = nextReservationIdFinal_(concert.concert_code, concertDate.concert_date);
+    const reservationId = nextWalkinReservationIdFinal_(concertDate.concert_date);
     const suitcaseCount = normalizeCountFinal_(body.expected_suitcase_count, 1);
     const extraBagCount = normalizeCountFinal_(body.expected_extra_bag_count, 0);
     if (suitcaseCount < 1) throw new Error('expected_suitcase_count must be at least 1');
@@ -691,6 +691,22 @@ function nextReservationIdFinal_(concertCode, concertDate) {
     }
   });
 
+  return prefix + String(max + 1).padStart(3, '0');
+}
+
+
+function nextWalkinReservationIdFinal_(concertDate) {
+  const dateKey = dateKeyFromConcertDateFinal_(concertDate);
+  const prefix = 'WK-' + dateKey + '-';
+  const rows = readSheetObjectsFinal_(CARRYGO_SHEETS.RESERVATIONS, RESERVATIONS_HEADERS);
+  let max = 0;
+  rows.forEach(row => {
+    const id = String(row.reservation_id || '');
+    if (id.indexOf(prefix) === 0) {
+      const seq = Number(id.slice(prefix.length));
+      if (!isNaN(seq)) max = Math.max(max, seq);
+    }
+  });
   return prefix + String(max + 1).padStart(3, '0');
 }
 
