@@ -25,7 +25,8 @@ const CONCERTS_HEADERS = [
   'is_active',
   'sort_order',
   'created_at',
-  'updated_at'
+  'updated_at',
+  'city'
 ];
 
 const CONCERT_DATES_HEADERS = [
@@ -412,6 +413,7 @@ function getActiveConcertsFinal() {
       concert_code: row.concert_code,
       concert_title: row.concert_title,
       venue: row.venue,
+      city: String(row.city || 'SEOUL').trim(),
       sort_order: Number(row.sort_order || 0)
     }));
 }
@@ -2167,6 +2169,7 @@ function adminCreateConcertApiFinal_(params) {
     const rows = readSheetObjectsFinal_(CARRYGO_SHEETS.CONCERTS, CONCERTS_HEADERS);
     const title = requiredStringFinal_(params.concert_title, 'concert_title');
     const venue = requiredStringFinal_(params.venue, 'venue');
+    const city = String(params.city || 'SEOUL').trim().toUpperCase();
     const concertId = String(params.concert_id || '').trim() || uniqueConcertIdFinal_(title, rows);
     const concertCode = String(params.concert_code || '').trim().toUpperCase() || uniqueConcertCodeFinal_(title, rows);
     if (rows.some(row => String(row.concert_id) === concertId)) throw new Error('concert_id already exists: ' + concertId);
@@ -2176,6 +2179,7 @@ function adminCreateConcertApiFinal_(params) {
       concert_code: concertCode,
       concert_title: title,
       venue: venue,
+      city: city,
       is_active: String(params.is_active || 'TRUE').toUpperCase() !== 'FALSE',
       sort_order: normalizeCountFinal_(params.sort_order, rows.length + 1),
       created_at: now,
@@ -2225,6 +2229,7 @@ function adminCreateConcertBundleApiFinal_(params) {
     const now = new Date();
     const title = requiredStringFinal_(params.concert_title, 'concert_title');
     const venue = requiredStringFinal_(params.venue, 'venue');
+    const city = String(params.city || 'SEOUL').trim().toUpperCase();
     let dateLines = parseConcertDateLinesFinal_(params.date_lines);
     if (!dateLines.length && params.start_date && params.end_date && params.time_lines) {
       dateLines = parseConcertRangeTimesFinal_(params.start_date, params.end_date, params.time_lines);
@@ -2243,6 +2248,7 @@ function adminCreateConcertBundleApiFinal_(params) {
       concert_code: concertCode,
       concert_title: title,
       venue: venue,
+      city: city,
       is_active: true,
       sort_order: normalizeCountFinal_(params.sort_order, concertRows.length + 1),
       created_at: now,
@@ -2492,6 +2498,7 @@ function adminUpdateConcertApiFinal_(params) {
         updateCellIfParamFinal_(sh, i + 1, CONCERTS_HEADERS, 'concert_code', params.concert_code, true);
         updateCellIfParamFinal_(sh, i + 1, CONCERTS_HEADERS, 'concert_title', params.concert_title, true);
         updateCellIfParamFinal_(sh, i + 1, CONCERTS_HEADERS, 'venue', params.venue, true);
+        updateCellIfParamFinal_(sh, i + 1, CONCERTS_HEADERS, 'city', String(params.city || 'SEOUL').trim().toUpperCase(), true);
         updateCellIfParamFinal_(sh, i + 1, CONCERTS_HEADERS, 'updated_at', new Date(), false);
         return jsonFinal_({ ok: true, concert_id: concertId });
       }
