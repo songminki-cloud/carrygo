@@ -1056,13 +1056,15 @@ function testCreateReservationPayPalFinal() {
 function sendPaymentInstructionEmailFinal_(reservation) {
   if (!reservation || !reservation.customer_email) throw new Error('customer_email is required for email');
 
-  const subject = '[CarryGo] 신청이 접수되었습니다 / Payment Required';
+  const subject = '[CarryGo] 결제 필요 / Payment Required';
   const body = buildPaymentInstructionEmailBodyFinal_(reservation);
+  const htmlBody = buildPaymentInstructionEmailHtmlFinal_(reservation);
 
   MailApp.sendEmail({
     to: reservation.customer_email,
     subject: subject,
     body: body,
+    htmlBody: htmlBody,
     name: 'CarryGo'
   });
 }
@@ -1126,6 +1128,47 @@ function buildPaymentInstructionEmailBodyFinal_(r) {
   ].join('\n');
 }
 
+
+function buildPaymentInstructionEmailHtmlFinal_(r) {
+  const paymentBlock = buildPaymentInstructionEmailPaymentBlockFinal_(r);
+  const amount = formatAmountDisplayFinal_(r);
+  const reservationId = escapeHtmlFinal_(r.reservation_id);
+  const kakaoNotice = String(r.payment_method || '').toUpperCase() === 'KAKAOPAY'
+    ? '<div style="margin-top:14px;padding:14px;border:2px solid #b00020;border-radius:14px;background:#fff3f0;color:#b00020;font-size:16px;line-height:1.5;font-weight:900;">카카오페이 송금 화면에서 <span style="font-size:22px;">20000</span>을 직접 입력해 주세요.<br>송금 메모에는 예약번호 <span style="font-size:18px;">' + reservationId + '</span>를 입력해 주세요.</div>'
+    : '<div style="margin-top:14px;padding:14px;border:1px solid #ddd;border-radius:14px;background:#fafafa;color:#333;font-size:15px;line-height:1.5;font-weight:800;">결제 메모에 예약번호 ' + reservationId + '를 입력해 주세요.</div>';
+
+  return [
+    '<div style="margin:0;padding:0;background:#f7f2ea;font-family:Arial,\'Apple SD Gothic Neo\',\'Noto Sans KR\',sans-serif;color:#111;">',
+    '<div style="max-width:560px;margin:0 auto;padding:18px;">',
+    '<div style="background:#fff;border:2px solid #111;border-radius:18px;padding:20px;">',
+    '<div style="font-size:13px;font-weight:900;letter-spacing:.08em;color:#b00020;margin-bottom:8px;">예약 확정 전입니다</div>',
+    '<div style="font-size:26px;line-height:1.16;font-weight:950;letter-spacing:-.04em;margin-bottom:12px;">예약을 확정하려면<br><span style="font-size:40px;">' + escapeHtmlFinal_(amount) + '</span><br>결제해 주세요.</div>',
+    '<div style="font-size:16px;line-height:1.5;color:#444;font-weight:800;margin-bottom:18px;">결제 확인 후 QR 코드와 픽드랍 안내 링크를 이메일로 보내드립니다.</div>',
+    '<div style="display:block;border:2px solid #111;border-radius:16px;padding:16px;margin-bottom:14px;background:#fff;">',
+    '<div style="font-size:12px;font-weight:900;color:#777;letter-spacing:.12em;text-transform:uppercase;">Payment Amount</div>',
+    '<div style="font-size:44px;line-height:1;font-weight:950;letter-spacing:-.05em;margin:7px 0 14px;">' + escapeHtmlFinal_(amount) + '</div>',
+    '<div style="font-size:15px;line-height:1.55;font-weight:850;">결제방법: ' + escapeHtmlFinal_(paymentBlock.methodLabel) + '<br>송금메모: <span style="font-size:19px;font-weight:950;">' + reservationId + '</span></div>',
+    '</div>',
+    paymentBlock.link ? '<a href="' + escapeHtmlFinal_(paymentBlock.link || '') + '" style="display:block;text-align:center;background:#111;color:#fff;text-decoration:none;border-radius:999px;padding:17px 14px;font-size:18px;font-weight:950;margin:16px 0;">' + escapeHtmlFinal_(paymentBlock.buttonLabel || '결제하기') + '</a>' : '',
+    kakaoNotice,
+    '<div style="margin-top:22px;border-top:1px solid #ddd;padding-top:16px;">',
+    '<div style="font-size:16px;font-weight:950;margin-bottom:8px;">예약 정보</div>',
+    '<div style="font-size:14px;line-height:1.65;color:#333;font-weight:750;">',
+    '예약번호: ' + reservationId + '<br>',
+    '콘서트: ' + escapeHtmlFinal_(r.concert_title) + '<br>',
+    '공연일: ' + escapeHtmlFinal_(r.concert_date + ' ' + r.concert_time) + '<br>',
+    '장소: ' + escapeHtmlFinal_(r.venue) + '<br>',
+    '짐 맡기는 시간: ' + escapeHtmlFinal_(r.pickup_time || '') + ' <span style="color:#777;">(선택 시간 30분 전부터 정시까지)</span>',
+    '</div>',
+    '</div>',
+    '<div style="margin-top:16px;font-size:13px;line-height:1.55;color:#666;font-weight:700;">포함 사항: 캐리어 1개 / 선택 시간 짐 맡기기 / 공연 종료 후 2시간 이내 수령<br>추가 짐은 현장 현금 결제입니다. 추가 가방·쇼핑백 1개당 ₩10,000 / 한화가 없으면 $10.</div>',
+    '</div>',
+    '<div style="font-size:12px;color:#777;line-height:1.5;margin-top:14px;text-align:center;">CarryGo</div>',
+    '</div>',
+    '</div>'
+  ].join('');
+}
+
 function buildPaymentInstructionEmailPaymentBlockFinal_(r) {
   const method = String(r.payment_method || '').toUpperCase();
   const reservationId = r.reservation_id;
@@ -1134,6 +1177,8 @@ function buildPaymentInstructionEmailPaymentBlockFinal_(r) {
     const link = 'https://qr.kakaopay.com/FOzMisaMr';
     return {
       methodLabel: 'KakaoPay',
+      link: link,
+      buttonLabel: '카카오페이 송금하기',
       noticeKo: '※ 카카오페이는 링크를 눌러도 금액이 자동 입력되지 않을 수 있습니다. 송금 화면에서 반드시 ₩20,000을 직접 입력하고, 송금 메모에 예약번호 ' + reservationId + '를 입력해 주세요.',
       noticeEn: '※ KakaoPay may not auto-fill the amount. Please enter ₩20,000 manually and add your Reservation ID ' + reservationId + ' in the transfer memo.',
       ko: [
@@ -1151,6 +1196,8 @@ function buildPaymentInstructionEmailPaymentBlockFinal_(r) {
     const link = getScriptPropertyFinal_('PAYPAL_LINK') || '{{paypal_link}}';
     return {
       methodLabel: 'PayPal',
+      link: link,
+      buttonLabel: 'PayPal 결제하기',
       noticeKo: '※ 결제 메모에 예약번호 ' + reservationId + '를 입력해 주세요.',
       noticeEn: '※ Please add your Reservation ID ' + reservationId + ' in the payment note.',
       ko: [
@@ -1169,6 +1216,7 @@ function buildPaymentInstructionEmailPaymentBlockFinal_(r) {
     const holder = getScriptPropertyFinal_('BANK_ACCOUNT_HOLDER') || '{{account_holder}}';
     return {
       methodLabel: 'Bank Transfer',
+      link: '',
       noticeKo: '※ 송금 메모에 예약번호 ' + reservationId + '를 입력해 주세요.',
       noticeEn: '※ Please add your Reservation ID ' + reservationId + ' in the transfer memo.',
       ko: [
@@ -1192,7 +1240,7 @@ function buildPaymentInstructionEmailPaymentBlockFinal_(r) {
     };
   }
 
-  return { methodLabel: method, noticeKo: '', noticeEn: '', ko: method, en: method };
+  return { methodLabel: method, link: '', buttonLabel: '결제하기', noticeKo: '', noticeEn: '', ko: method, en: method };
 }
 
 function formatAmountDisplayFinal_(r) {
