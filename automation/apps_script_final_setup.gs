@@ -942,6 +942,38 @@ function formatDateTimeFinal_(date) {
   return Utilities.formatDate(date, CARRYGO_TIMEZONE, 'yyyy-MM-dd HH:mm:ss');
 }
 
+function formatKoreanDateFinal_(value) {
+  const text = String(value || '').trim();
+  const match = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (!match) return text;
+  return match[1] + '년 ' + Number(match[2]) + '월 ' + Number(match[3]) + '일';
+}
+
+function formatKoreanTimeFinal_(value) {
+  const match = String(value || '').trim().match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return String(value || '').trim();
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  const period = hour < 12 ? '오전' : '오후';
+  const displayHour = hour % 12 || 12;
+  return period + ' ' + displayHour + '시' + (minute ? ' ' + minute + '분' : '');
+}
+
+function pickupStartTimeFinal_(value) {
+  const match = String(value || '').trim().match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return '';
+  const date = new Date(2000, 0, 1, Number(match[1]), Number(match[2]));
+  date.setMinutes(date.getMinutes() - 30);
+  return Utilities.formatDate(date, CARRYGO_TIMEZONE, 'HH:mm');
+}
+
+function formatPickupWindowFinal_(value) {
+  const pickup = String(value || '').trim();
+  if (!pickup) return '';
+  const start = pickupStartTimeFinal_(pickup);
+  return formatKoreanTimeFinal_(start) + '부터 접수 · ' + formatKoreanTimeFinal_(pickup) + ' 마감';
+}
+
 // ===== CarryGo Final Test Helpers =====
 
 /**
@@ -1516,7 +1548,7 @@ function renderCheckinPageFinal_(params) {
           .status{display:block;width:max-content;max-width:100%;background:#111;color:#fff;border-radius:999px;padding:clamp(8px,1.7vw,14px) clamp(13px,2.5vw,22px);font-size:clamp(16px,3.1vw,28px);font-weight:900;margin:0 0 clamp(18px,3vw,28px);line-height:1.18;}
           .row{border-top:1px solid #eee;padding:clamp(15px,3vw,28px) 0;}
           .label{font-size:clamp(15px,2.5vw,23px);color:#666;margin-bottom:clamp(5px,1vw,10px);}
-          .value{font-size:clamp(24px,5.2vw,48px);font-weight:900;word-break:break-word;line-height:1.12;}
+          .value{font-size:clamp(24px,5.2vw,48px);font-weight:900;word-break:break-word;line-height:1.12;}.subnote{margin-top:8px;font-size:clamp(14px,2.5vw,22px);font-weight:800;color:#666;line-height:1.35;}
           a.button{display:block;text-align:center;background:#111;color:#fff;text-decoration:none;border-radius:12px;padding:clamp(17px,3.2vw,30px) 12px;margin-top:clamp(12px,2vw,20px);font-size:clamp(18px,3.4vw,32px);font-weight:900;}
           .note{font-size:clamp(15px,2.5vw,23px);color:#555;line-height:1.45;margin-top:clamp(18px,3vw,28px);}
           @media (max-width:480px){.wrap{padding:10px}.card{padding:20px}.logoImage{width:168px;max-width:60%;}.value{font-size:24px}.label{font-size:15px}.status{font-size:16px}a.button{font-size:18px}}
@@ -1530,9 +1562,9 @@ function renderCheckinPageFinal_(params) {
             <div class="row"><div class="label">Reservation ID / 예약번호</div><div class="value">${escapeHtmlFinal_(r.reservation_id)}</div></div>
             <div class="row"><div class="label">Name / 이름</div><div class="value">${escapeHtmlFinal_(maskedName)}</div></div>
             <div class="row"><div class="label">Concert / 콘서트</div><div class="value">${escapeHtmlFinal_(r.concert_title)}</div></div>
-            <div class="row"><div class="label">Date & Time / 공연일</div><div class="value">${escapeHtmlFinal_(r.concert_date)} ${escapeHtmlFinal_(r.concert_time)}</div></div>
+            <div class="row"><div class="label">Date & Time / 공연일시</div><div class="value">${escapeHtmlFinal_(formatKoreanDateFinal_(r.concert_date))}<br>${escapeHtmlFinal_(formatKoreanTimeFinal_(r.concert_time))}</div></div>
             <div class="row"><div class="label">Venue / 장소</div><div class="value">${escapeHtmlFinal_(r.venue)}</div></div>
-            <div class="row"><div class="label">Drop-off Time / 짐 맡기는 시간</div><div class="value">${escapeHtmlFinal_(r.pickup_time || '')} · 30분 전부터 정시까지</div></div>
+            <div class="row"><div class="label">Drop-off Time / 짐 맡기는 시간</div><div class="value">${escapeHtmlFinal_(formatKoreanTimeFinal_(r.pickup_time || ''))}</div><div class="subnote">${escapeHtmlFinal_(formatPickupWindowFinal_(r.pickup_time || ''))}</div></div>
 
             <a class="button" target="_top" href="${pickupLink}">Pickup & Drop Guide / 픽드랍 안내</a>
             <a class="button" target="_top" href="${nextDayLink}">Next-day Pickup Guide / 익일 수령 안내</a>
@@ -1760,7 +1792,7 @@ function buildInlineStaffLoginHtmlFinal_(reservation, token) {
       </div>
       <div style="padding:14px;border:2px solid #111;border-radius:12px;background:#fff;margin-bottom:12px;">
         <div style="font-size:13px;color:#555;font-weight:900;">현장 추가 결제금액 / Onsite Cash Due</div>
-        <div id="onsiteDueBox" style="font-size:clamp(30px,6vw,54px);font-weight:950;letter-spacing:-.05em;">₩0</div>
+        <div id="onsiteDueBox" style="font-size:clamp(28px,5.4vw,44px);font-weight:950;letter-spacing:-.04em;line-height:1.05;">₩0</div>
         <div style="font-size:12px;color:#666;line-height:1.35;">첫 번째 캐리어 예약 결제분 제외. 추가 캐리어 ₩20,000 / 추가 짐 ₩10,000.</div>
       </div>
       <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.35;color:#555;font-weight:800;margin-bottom:10px;"><input id="hardcopyInput" type="checkbox" style="width:auto;margin-top:2px;">하드카피 동의서 작성/서명 및 실제 수량 확인 완료</label>
