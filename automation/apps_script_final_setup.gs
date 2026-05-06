@@ -400,6 +400,10 @@ function doGet(e) {
       return renderAdminConfirmSelectedPageFinal_(params);
     }
 
+    if (action === 'get_active_booking_data') {
+      return jsonFinal_({ ok: true, concerts: getActiveBookingDataFinal() });
+    }
+
     if (action === 'get_active_concerts') {
       return jsonFinal_({ ok: true, concerts: getActiveConcertsFinal() });
     }
@@ -469,6 +473,14 @@ function getActiveConcertDatesFinal(concertId) {
       location_change_guide_link: row.location_change_guide_link,
       sort_order: Number(row.sort_order || 0)
     }));
+}
+
+function getActiveBookingDataFinal() {
+  return getActiveConcertsFinal().map(concert => {
+    const out = Object.assign({}, concert);
+    out.concert_dates = getActiveConcertDatesFinal(concert.concert_id);
+    return out;
+  });
 }
 
 function createReservationFinal(body) {
