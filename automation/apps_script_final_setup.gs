@@ -564,8 +564,8 @@ function createWalkinReservationFinal(body) {
     const countryCode = normalizeCountryCodeFinal_(body.country_code || '+82');
     const phoneNumber = String(body.phone_number || '').trim();
     const phoneFull = normalizePhoneFullFinal_(countryCode, phoneNumber);
-    const tagNumbers = requiredStringFinal_(body.luggage_tag_numbers, 'luggage_tag_numbers');
-    const consentFlags = buildWalkinConsentFlagsFinal_(body);
+    const tagNumbers = nextLuggageTagNumbersFinal_(suitcaseCount + extraBagCount);
+    const consentFlags = 'HARDCOPY_CONFIRMED=' + String(body.hardcopy_confirmed || 'NO').trim().toUpperCase();
 
     const rowObject = {
       reservation_id: reservationId,
@@ -642,9 +642,19 @@ function createWalkinReservationFinal(body) {
   }
 }
 
-function buildWalkinConsentFlagsFinal_(body) {
-  const keys = ['valuables','electronics','fragile','partial_pickup','existing_damage','third_party_pickup','off_time_request','weather_sensitive'];
-  return keys.map(key => key + '=' + String(body[key] || 'NO').trim().toUpperCase()).join('; ');
+function nextLuggageTagNumbersFinal_(count) {
+  const total = Math.max(1, Number(count || 1));
+  const rows = readSheetObjectsFinal_(CARRYGO_SHEETS.RESERVATIONS, RESERVATIONS_HEADERS);
+  let max = 0;
+  rows.forEach(row => {
+    String(row.luggage_tag_numbers || '').split(/[,\s]+/).forEach(part => {
+      const n = Number(String(part || '').replace(/[^0-9]/g, ''));
+      if (!isNaN(n)) max = Math.max(max, n);
+    });
+  });
+  const tags = [];
+  for (let i = 1; i <= total; i++) tags.push(String(max + i).padStart(3, '0'));
+  return tags.join(',');
 }
 
 function findActiveConcertFinal_(concertId) {
