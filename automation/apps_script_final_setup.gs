@@ -1785,25 +1785,25 @@ function buildInlineStaffLoginHtmlFinal_(reservation, token) {
   return `
     <div id="staffBox" style="margin-top:18px;padding:18px;border:1px solid #ddd;border-radius:14px;background:#fafafa;">
       <div style="font-size:clamp(20px,3.8vw,30px);font-weight:900;margin-bottom:10px;">ONSITE CHECK-IN / 현장 접수</div>
-      <div style="font-size:clamp(15px,2.6vw,22px);color:#555;line-height:1.4;margin-bottom:14px;">실제 수량을 확인하면 추가 결제금액과 러기지택 번호가 자동 생성됩니다.</div>
+      <div style="font-size:clamp(16px,3.2vw,24px);color:#555;line-height:1.45;margin-bottom:16px;font-weight:800;">실제 수량을 확인하면 추가 결제금액과 러기지택 번호가 자동 생성됩니다.</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-        <label style="font-size:13px;font-weight:900;color:#555;">Suitcase / 캐리어<input id="actualSuitcaseInput" type="number" min="1" value="${suitcaseCount}" oninput="carryGoUpdateDueFinal()" style="box-sizing:border-box;width:100%;font-size:clamp(20px,4vw,32px);padding:14px;border:1px solid #ccc;border-radius:10px;margin-top:6px;"></label>
-        <label style="font-size:13px;font-weight:900;color:#555;">Extra / 추가짐<input id="actualExtraInput" type="number" min="0" value="${extraCount}" oninput="carryGoUpdateDueFinal()" style="box-sizing:border-box;width:100%;font-size:clamp(20px,4vw,32px);padding:14px;border:1px solid #ccc;border-radius:10px;margin-top:6px;"></label>
+        <label style="font-size:clamp(15px,3vw,22px);font-weight:900;color:#555;">Suitcase / 캐리어<input id="actualSuitcaseInput" type="number" min="1" value="${suitcaseCount}" oninput="carryGoUpdateDueFinal()" style="box-sizing:border-box;width:100%;font-size:clamp(20px,4vw,32px);padding:14px;border:1px solid #ccc;border-radius:10px;margin-top:6px;"></label>
+        <label style="font-size:clamp(15px,3vw,22px);font-weight:900;color:#555;">Extra / 추가짐<input id="actualExtraInput" type="number" min="0" value="${extraCount}" oninput="carryGoUpdateDueFinal()" style="box-sizing:border-box;width:100%;font-size:clamp(20px,4vw,32px);padding:14px;border:1px solid #ccc;border-radius:10px;margin-top:6px;"></label>
       </div>
       <div style="padding:14px;border:2px solid #111;border-radius:12px;background:#fff;margin-bottom:12px;">
-        <div style="font-size:13px;color:#555;font-weight:900;">현장 추가 결제금액 / Onsite Cash Due</div>
+        <div style="font-size:clamp(15px,3vw,22px);color:#555;font-weight:900;">현장 추가 결제금액 / Onsite Cash Due</div>
         <div id="onsiteDueBox" style="font-size:clamp(28px,5.4vw,44px);font-weight:950;letter-spacing:-.04em;line-height:1.05;">₩0</div>
-        <div style="font-size:12px;color:#666;line-height:1.35;">첫 번째 캐리어 예약 결제분 제외. 추가 캐리어 ₩20,000 / 추가 짐 ₩10,000.</div>
+        <div style="font-size:clamp(13px,2.7vw,20px);color:#666;line-height:1.45;font-weight:750;">첫 번째 캐리어 예약 결제분 제외. 추가 캐리어 ₩20,000 / 추가 짐 ₩10,000.</div>
       </div>
-      <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.35;color:#555;font-weight:800;margin-bottom:10px;"><input id="hardcopyInput" type="checkbox" style="width:auto;margin-top:2px;">하드카피 동의서 작성/서명 및 실제 수량 확인 완료</label>
-      <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.35;color:#555;font-weight:800;margin-bottom:10px;"><input id="cashInput" type="checkbox" style="width:auto;margin-top:2px;">현장 추가금/현금 수납 완료</label>
-      <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.35;color:#555;font-weight:800;margin-bottom:10px;"><input id="tagInput" type="checkbox" style="width:auto;margin-top:2px;">러기지택 고객용/짐부착용 기재 및 부착 완료</label>
-      <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.35;color:#555;font-weight:800;margin-bottom:12px;"><input id="photoInput" type="checkbox" style="width:auto;margin-top:2px;">스태프폰 사진 촬영 완료 · 태그번호가 보이게 촬영</label>
+      <label style="display:flex;gap:10px;align-items:flex-start;font-size:clamp(16px,3.3vw,24px);line-height:1.38;color:#333;font-weight:850;margin-bottom:13px;"><input id="hardcopyInput" type="checkbox" style="width:18px;height:18px;min-width:18px;margin-top:2px;">하드카피 동의서 작성/서명 및 실제 수량 확인 완료</label>
+      <label style="display:flex;gap:10px;align-items:flex-start;font-size:clamp(16px,3.3vw,24px);line-height:1.38;color:#333;font-weight:850;margin-bottom:13px;"><input id="cashInput" type="checkbox" style="width:18px;height:18px;min-width:18px;margin-top:2px;">현장 추가금/현금 수납 완료</label>
+      <label style="display:flex;gap:10px;align-items:flex-start;font-size:clamp(16px,3.3vw,24px);line-height:1.38;color:#333;font-weight:850;margin-bottom:13px;"><input id="tagInput" type="checkbox" style="width:18px;height:18px;min-width:18px;margin-top:2px;">러기지택 고객용/짐부착용 기재 및 부착 완료</label>
+      <label style="display:flex;gap:10px;align-items:flex-start;font-size:clamp(16px,3.3vw,24px);line-height:1.38;color:#333;font-weight:850;margin-bottom:16px;"><input id="photoInput" type="checkbox" style="width:18px;height:18px;min-width:18px;margin-top:2px;">스태프폰 사진 촬영 완료 · 태그번호가 보이게 촬영</label>
       <div id="staffLoginBox">
-        <input id="staffCodeInput" placeholder="Staff code" autocomplete="off" style="box-sizing:border-box;width:100%;font-size:clamp(20px,4vw,32px);padding:16px;border:1px solid #ccc;border-radius:10px;margin:0 0 12px;">
+        <input id="staffCodeInput" placeholder="Staff code" autocomplete="off" style="box-sizing:border-box;width:100%;font-size:clamp(22px,4.8vw,34px);padding:18px;border:1px solid #ccc;border-radius:10px;margin:0 0 14px;">
       </div>
-      <button type="button" onclick="carryGoOnsiteCheckinFinal()" style="width:100%;font-size:clamp(17px,3.1vw,26px);font-weight:900;background:#111;color:#fff;border:0;border-radius:10px;padding:17px 10px;">태그 발급 & 접수완료</button>
-      <div id="staffMsg" style="font-size:clamp(14px,2.5vw,20px);color:#b00020;margin-top:12px;"></div>
+      <button type="button" onclick="carryGoOnsiteCheckinFinal()" style="width:100%;font-size:clamp(20px,4vw,30px);font-weight:900;background:#111;color:#fff;border:0;border-radius:10px;padding:19px 10px;">태그 발급 & 접수완료</button>
+      <div id="staffMsg" style="font-size:clamp(16px,3.2vw,24px);color:#b00020;margin-top:14px;font-weight:850;line-height:1.4;"></div>
     </div>
     <script>
       const CARRYGO_WEBAPP_URL = '${safeBase}';
