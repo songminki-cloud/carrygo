@@ -91,7 +91,10 @@ const RESERVATIONS_HEADERS = [
   'luggage_tag_numbers',
   'onsite_payment_method',
   'onsite_staff',
-  'onsite_consent_flags'
+  'onsite_consent_flags',
+  'actual_suitcase_count',
+  'actual_extra_bag_count',
+  'onsite_due_amount'
 ];
 
 const STAFF_HEADERS = [
@@ -304,9 +307,10 @@ function doGet(e) {
       return pickupCompleteApiFinal_(params);
     }
 
-    if (mode === 'assign_luggage_tags_api') {
-      return assignLuggageTagsApiFinal_(params);
+    if (mode === 'onsite_checkin_api') {
+      return onsiteCheckinApiFinal_(params);
     }
+
 
     if (mode === 'staff_session_api') {
       return staffSessionApiFinal_(params);
@@ -514,7 +518,10 @@ function createReservationFinal(body) {
       luggage_tag_numbers: '',
       onsite_payment_method: '',
       onsite_staff: '',
-      onsite_consent_flags: ''
+      onsite_consent_flags: '',
+      actual_suitcase_count: '',
+      actual_extra_bag_count: '',
+      onsite_due_amount: ''
     };
 
     validateReservationFinal_(rowObject);
@@ -568,7 +575,7 @@ function createWalkinReservationFinal(body) {
     const countryCode = normalizeCountryCodeFinal_(body.country_code || '+82');
     const phoneNumber = String(body.phone_number || '').trim();
     const phoneFull = normalizePhoneFullFinal_(countryCode, phoneNumber);
-    const tagNumbers = nextLuggageTagNumbersFinal_(suitcaseCount + extraBagCount);
+    const tagNumbers = nextLuggageTagNumbersFinal_(suitcaseCount + extraBagCount, concert.concert_id);
     const consentFlags = 'HARDCOPY_CONFIRMED=' + String(body.hardcopy_confirmed || 'NO').trim().toUpperCase();
 
     const rowObject = {
@@ -618,7 +625,10 @@ function createWalkinReservationFinal(body) {
       luggage_tag_numbers: tagNumbers,
       onsite_payment_method: 'CASH',
       onsite_staff: staff.staff_id || staff.staff_name || '',
-      onsite_consent_flags: consentFlags
+      onsite_consent_flags: consentFlags,
+      actual_suitcase_count: suitcaseCount,
+      actual_extra_bag_count: extraBagCount,
+      onsite_due_amount: paidAmount
     };
 
     const sh = getSheetFinal_(CARRYGO_SHEETS.RESERVATIONS);
@@ -646,11 +656,13 @@ function createWalkinReservationFinal(body) {
   }
 }
 
-function nextLuggageTagNumbersFinal_(count) {
+function nextLuggageTagNumbersFinal_(count, concertId) {
   const total = Math.max(1, Number(count || 1));
+  const targetConcertId = String(concertId || '').trim();
   const rows = readSheetObjectsFinal_(CARRYGO_SHEETS.RESERVATIONS, RESERVATIONS_HEADERS);
   let max = 0;
   rows.forEach(row => {
+    if (targetConcertId && String(row.concert_id || '').trim() !== targetConcertId) return;
     String(row.luggage_tag_numbers || '').split(/[,\s]+/).forEach(part => {
       const n = Number(String(part || '').replace(/[^0-9]/g, ''));
       if (!isNaN(n)) max = Math.max(max, n);
@@ -1342,14 +1354,8 @@ function buildReservationConfirmedEmailBodyFinal_(r) {
 
 function buildCheckinUrlFinal_(reservationId, token) {
   const webAppUrl = getScriptPropertyFinal_('WEB_APP_URL') || ScriptApp.getService().getUrl() || '';
-  const assignUrl = buildAssignTagPageUrlFinal_(reservationId);
   if (!webAppUrl) return 'WEB_APP_URL_NOT_SET?mode=checkin&id=' + encodeURIComponent(reservationId) + '&token=' + encodeURIComponent(token);
-  return webAppUrl + '?mode=checkin&id=' + encodeURIComponent(reservationId) + '&token=' + encodeURIComponent(token) + '&assign=' + encodeURIComponent(assignUrl);
-}
-
-function buildAssignTagPageUrlFinal_(reservationId) {
-  const base = getScriptPropertyFinal_('PUBLIC_SITE_URL') || 'https://songminki-cloud.github.io/carrygo';
-  return String(base).replace(/\/$/, '') + '/tag.html?id=' + encodeURIComponent(reservationId || '');
+  return webAppUrl + '?mode=checkin&id=' + encodeURIComponent(reservationId) + '&token=' + encodeURIComponent(token);
 }
 
 function createQrPngBlobFinal_(text, reservationId) {
@@ -1504,7 +1510,7 @@ function renderCheckinPageFinal_(params) {
         <div class="wrap">
           <div class="card">
             <img class="logoImage" src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQABpwGnAAD/4QCARXhpZgAATU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAIdpAAQAAAABAAAATgAAAAAAAAGnAAAAAQAAAacAAAABAAOgAQADAAAAAQABAACgAgAEAAAAAQAAAgigAwAEAAAAAQAAALkAAAAA/+0AOFBob3Rvc2hvcCAzLjAAOEJJTQQEAAAAAAAAOEJJTQQlAAAAAAAQ1B2M2Y8AsgTpgAmY7PhCfv/CABEIALkCCAMBIgACEQEDEQH/xAAfAAABBQEBAQEBAQAAAAAAAAADAgQBBQAGBwgJCgv/xADDEAABAwMCBAMEBgQHBgQIBnMBAgADEQQSIQUxEyIQBkFRMhRhcSMHgSCRQhWhUjOxJGIwFsFy0UOSNIII4VNAJWMXNfCTc6JQRLKD8SZUNmSUdMJg0oSjGHDiJ0U3ZbNVdaSVw4Xy00Z2gONHVma0CQoZGigpKjg5OkhJSldYWVpnaGlqd3h5eoaHiImKkJaXmJmaoKWmp6ipqrC1tre4ubrAxMXGx8jJytDU1dbX2Nna4OTl5ufo6erz9PX29/j5+v/EAB8BAAMBAQEBAQEBAQEAAAAAAAECAAMEBQYHCAkKC//EAMMRAAICAQMDAwIDBQIFAgQEhwEAAhEDEBIhBCAxQRMFMCIyURRABjMjYUIVcVI0gVAkkaFDsRYHYjVT8NElYMFE4XLxF4JjNnAmRVSSJ6LSCAkKGBkaKCkqNzg5OkZHSElKVVZXWFlaZGVmZ2hpanN0dXZ3eHl6gIOEhYaHiImKkJOUlZaXmJmaoKOkpaanqKmqsLKztLW2t7i5usDCw8TFxsfIycrQ09TV1tfY2drg4uPk5ebn6Onq8vP09fb3+Pn6/9sAQwACAgICAgIDAgIDBQMDAwUGBQUFBQYIBgYGBgYICggICAgICAoKCgoKCgoKDAwMDAwMDg4ODg4PDw8PDw8PDw8P/9sAQwECAgIEBAQHBAQHEAsJCxAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ/9oADAMBAAIRAxEAAAH6I/PO4+a69r3imr2uPFdXtW8V1e1bxXV7VvFdXtW8V1e1bxXV7VvFdXtW8V1e1bxXV7TvFtXtO8W1e07xbV7TvFtXtO8W1e07xbV7TvFtXtO8W1e0x4vq9o3i+r2jeL6vaN4vq9o3i+r2ifFtXtM+K6vap8UvK+uez+yetr4J33tq+CZ+9dXwXvvTV8GM/v8AivF/afg77xr8hvnr6F+eq22rbatup/QmvzN367fM1fEWUmtt6tXlO/SXzeviLbVtvvSvgvfpSmvzY3178h1G3c1w2/Sma/NXfo58gV5Ft6VXmu/Sf5DrxTb9Da/PLfaHxfW3afoLX5jb9ePlSvjLbVtZfoJX5079f/Eq/O3PmNbbVnjO7r9efauL7Sttq22rbattq+HfuL4c+46/Ib56+hvnmttq22r9T/q7zvhq90dfhR+6FflT8vfoV+etb7T+LP0dr7h839IZV+B2cN637Ufiv+1Feq758/NCv2z/AC1/TT5Ir8zvZvGfZ6/ZeJ/NCv0u5j4Z/Q6vwaeeh+L1++/wv72zr8q/3Q/JX9bq+A/z9+hfnqv1z+iuV8Ir6Wd/h9+4NfkH8/fc3wzX6Aff3zN6vXbPPwZ/bKvin4L/AFa/KWttq1xT2dftN6L5f6hW2bU43wf5RX6kZKq22r4c+4/hv7kr8h/nn6G+ea22rbav3C8U9n8Yr8q/3n/BXoa+7fzxsK+t+tH5L/tPXprr5z+jK/D7gvor51rftR+K/wC1FcF+Sn62fk7X7kfMX1Z8pV+Zfs/jHs9fsv8Alj+p35Z1X/q5+W/6kV+NviftPi1foF9v/lF+vVfA/wB08dwdfkdXbV+7Hyv9TfK9fnN+xP4w6vr35C2r9bOx4ztK/GH9qfxW/aivNfyh/V78oa22rXtE5r90Ol8L90rRIq+SvXq89ey6Jrbavhr7l+GfuavyH+efob55rbattq/brx31/wAgr8p9tW21E/eX8Uf3Dr89v0G/J39N6+BPir9GfzmrftR+K/7T16RSy2rsfzk+4/xEpp7R4v7RX7Lc30nldegrf/DFfCvJ7VZ/uz+Cf66V9Ffn5+gf43V4ltq/dT5a+ovl6g+2/Pn3TX5d/I33V8K1+tPbcR3Ffi/+034s/tLXnH5Q/q7+UVbbVuj5xdfvY/8Am76RrUN9Ffl+7/S6aIvas3Y/n3V/99+Je21+Q/zz9DfPNbbVttX7ZeTereW1+Uf61fkv+9tfmh8ffoR+e9fQH6/fmb+mNfPHttXfV8+/kp+2n4l1v2n/ABY/aeuE8f8AXvjWv1U/B796/wAe68F9p8W9pr9lfy2/Un8sq/RXxYPu9fhjpit+j/5wfo5X3F+Df7yfg1VNtq/c/wCYfp35nr85f3g/B/8AeCvzu+FPuz4Tr9Zu74Lv6/Fz9pPxb/aavNvyi/V38oq22rdXyi6/fvfOf0ZWiayvkB9yDavvzIXXxt9I/KH2tVjtq/If55+hvnmttq22r9jPTfy0/VCvk/7P3kFfIvw31PLV+jX15899lX4//oh+df2VX6Ufg1+7f4tV55+0/wCLH7KVyf5ofo3+Vlfv5+dX2h4PX5f+0+LeyV+zX5Yfpz+Xlehfot+O/wCudfipwX0z8zVv0c/OP9D6+7/wY/dD8LKq9tX7ZWn5s/p/Xy59hR4RXx78d3NNX6f/AFj+Nf6zV8vfabrzivnX80vUfLq22rdLzR6/e114L71W2ivC7XyCsr7SyVV5x8ofe3l1ejuvzv8A0Qr8iPnj6H+eK22rbatZ1mrsOUFq22o0C1ZSdTgEascGootqNAtWmNTkCdUnb6lo2rEHqcN9q22rWFfq6XnUattqzprq6fnwattq22rX9A9r92Lnxj2etV2mr8z/AGr6oY11c7VttXwp91/Cv3VX5veoVv3HXxdvtHV8Xb7R1fF2+0dXxbH2nq+LN9p6vizfaer4s32nq+LN9p6vizfaer4sj7U1fFe+1NXxXvtTV8V77U1fFe+1NXxXvtTV8Vx9q6virfaur4q32rq+Kt9q6virfaur4q32rq+Ko+1tXxRvtfV8Ub7X1fFG+19XxQ7+zOPofaebek1gHBX56dn7J73UTtW21fCv3V8LfdNfDX3L8Mfc9bbVtorw/q/nb6freWcQ/r6q836v8y6/Rpl4xQ16p6hV8XVL7L8z+q1znt35vfpzXyv9Q/Jv15W4bufk+vrDiO3+UK93H4nR16N778i/Q9eR+0/NfVV7fTfN/L19w/OaXdfR/wA/eg/HdfdHRVFvXH+Uee/SVdv5N6R+QtfsX88+1fANfeHA8r5dX1H6BxXa1ttW4vtKiuL9L5vpK22rbattq22r4X+6Phj7nr4W+6fhD7vrbattq8F6z07Vw/k30jqjzr0bVwbL0nV4D6v0+r5q9w6XV5L6zOrz/wBA2rfPH0Pq5byv33VxzPvdXzx9DTq+bPZeu1eYo9R1VXzX9U6mvz79Gauc6PauJ8e+l9XK0PpGrkKj0bVwXG+36vN/SNq22reW+pV1eRe3Ud5W21bbVttW21fDH3P8I/d1fPfg/wB+avgvfemr4L33pq+C5+89XwZvvPV8G77y1fBu+8tXwbP3jq+Dt946vg7feOr4O33jq+Dt946vg/feGr4P33hq+D5+79Xwhvu/V8Ib7v1fCG+79Xwhvu/V8Ib7v1fCO+7tXwjvu7V8I77u1fCM/dur4T33Zq+E992avhPnf0O1fm53P3Vq+FN916vhTfder4U33Xq+FK/771eDe87V/9oACAEBAAEFAvHHja28IWdz9ZvjO5k/2YvjR/7MXxo/9mL40f8AsxfGj/2YnjR/7MTxo/8AZieNH/sxPGj/ANmJ40f+zE8aP/ZieNH/ALMTxo/9mJ40f+zE8aP/AGYnjR/7MTxo/wDZieNH/sxPGj/2YnjR/wCzE8aP/ZieNH/sxPGj/wBmJ40f+zE8aP8A2YnjR/7MTxo/9mJ40f8AsxPGj/2YnjR/7MTxo/8AZieNH/sxPGj/ANmJ40f+zE8aP/ZieNH/ALMTxo/9mJ40f+zD8aP/AGYfjR/7MPxo/wDZh+NH/sw/Gj/2YfjR/wCzD8aP/Zh+NH/sw/Gj/wBmJ40f+zE8aP8A2YnjR/7MXxo/9mL40f8AsxfGj2Kf61/Edj+ivrnf6K+ud/ov66H+i/rof6M+uh/o366H+jfrof6O+uhzz/XDsaPBXjG18X2H1sXEk/jL/fptlui83LZNksPD+3/zOxW6Nn+t360v+M1/36W88lrceAfEd14o8P8A8zB/zWr60v8AjNfu7Ps24b9f7H9Tez20Mn1WeClo8VfVBcWMJBSe3gzw6jxRvv8Asktofi/6rLDw/sHfw79Uu17xsn+yT2Zn6k9np4j+qLd9qh4dvDW0x75vv+yT2Z/7JPZXcfUltxj8U+C948Jyvwjs9pv+/wD+yT2d+O/CiPCW7PbPqa22627xp9W20eF9iew7BuXiO/2b6nNjtYpfqt8FyI8XfVNcbTb9rOzub+58PfU1Zoh/2WHgrHxF9TVoqC5tp7Of7m2Wqb3ctg2Gw8Obb/Mwf81q+tL/AIzX7v1R7DFt/h1pmhWp/WxsMez+I+31J2vM3t+MLT37wv38D/8AGI9/rb8OQ7RvL+r3/jNO+87Ta73tu42Uu23+zX6tr3aORE0f13WFbXY7L9JbylIQn67txoH9WPh+PZfDLjuIJS/rL2CLYfEz+pbYoyl+8Qcx/XRsUUS/ubfde43/AIW8R23inaf5mH/mtX1pf8Zr93wjEmDwv9Zm6XO1eEdq3W92rcY1cyP68EJ5Hb6kbTDbXcR863lQYpe3gf8A4xH60Lu5svB9h4w8S7dc2Fz77ZfXWhJ2B/V5/wAZo/rb3bdLPxT9Uvivd7rdn9YaEx+M39W+5/pTwh9Z23fpDwd9VNh774xf1obl+kfGD2IBOyfW3ul5tvhjw3ul5te9v68Ej39/VIhKfBnivcZ9p8ODcL1N34cv5N12H630hXg77llbKvbzwh4aR4V2btNJyofCHia6h2b3zxdtqBqO8P8AzWr60v8AjNfu+Fv+Ma+uD/jEE8bWRHu313KSbPt9U1vyfBsk0cSn4ptfcvEfbwN/xiP1s/8AGFPYf9on11f8Y8/q8/4zR/XJ/wAZb9UH/GYv6xf+Mzf1I7npuloL/bfqV2zlrup0Wttd3C7u6ey/7R/rsP8ArBYrTFep8eeEKfW5vm1b1eP6pv8AjCvH/wDxhr8D/wDGI/W9/wAYb9za7iO03Pad3sN8se3F3P1P7JPuG5eDNo3O8+5F/wA1q+tL/jNfu+FP+MZ+uD/jEGN23RInurm67+Brb3Twj4y3M2fiF/WpZ+6+M+3gb/jEfrY/4wqKCWeTbIF2u2/XV/xj7+rz/jNH9cn/ABln1O2VzJ4of1h/8Zm/qv3D3Dxi/D+xR7DH9Zm5/ozwf22T/aN9dv8AtA+59U3/ABhXj7/jDX4G/wCMQ+t7/jDfuQwyXE31d7Be+HPDnZa0xo/2Yng5x/WB4QlX9yL/AJrV9aX/ABmn3fCX/GL/AFwf8Yh9xCFSKsbcWll9at/yPGAIUPrstcN57eBv+MRubW2vIbfZNntJH9dG+RXF4/q8/wCM0d3s+1X8ttZ2lki6uYbK237cf0vvLsrqSyu7O5jvbR/XduPV22L/AGifXZ/tA+r7wb4a3Xwt/svfBz+tnYNp2K8f1Tf8YV4+/wCMOfgb/jEPre/4w37mzyxwbvbXVveQdt0r+jNt8MWdz9WPiTwtabZ4eTw7SSxwo269tNw+uP60v+M0+74P/wCMW+t//jD/ALnhi1N74if1tXQn8ZbBde+7H9d1tlt/bwN/xiO8bxY7FYbHv22+IrPxLcXtnsE881zK/q7/AOM0e7eMth2TcX9dV7uUFr3+q3dBuPhB/WJun6V8Xdtg/wBoX12f8Y/9Xvjrw9tXh9/Xh/jr+qX/AIwvx9/xhz8C/wDGIfW9/wAYd9xKVLV9Ve33+3eFe8UUUKVxxyd769t9tszJ4l+tbcPDfgHYfDK/rS/4zT7vg3/jFfrf/wCMPHG3+rDwgq3+tLwns3huN/Vfbe8+NXu/1ZeHd63LbbCHa7D62LT3nwb28Df8Yj9bH/GFfUjfg280SZ4b23VaXj+rv/jNH9chI8WeGr/9KbB9bm2i98J9/qQJ/Rb3L/aj28P/AO0H67P+Mf2z/aiOH14f46/qk/4wvx7/AMYc/An/ABh/1vf8Yd9zYv8Aa59zd/rJ3a63TYPrG3Ebt2+uXdJrfZ/Dm0QbFsr+tL/jNPu+C/8AjE/reST4OT7Vt/i314fun9S1lzd+f6f2Wttd214jxja+++Fu3gb/AIxH62f+MK+qK+908Xv6y9v/AEf4xf1d/wDGaP65P+Ms+qHcPe/CniCxG5bGQQe31If7THuP+1Dt4e/2gfXWlR8O7YCdyHD68P8AHH9Un/GGePAT4PfgVKk+EPre/wCMO+4lSkq+q2+3DcPCna9RJLZ/VXvmzbNZfWJum2eJtzGgf11QLTFaXEd3av60v+M0+79XF7HfeDt32q03vbtt+prbbPcH9dt9HJuD+pG1x27e5/ddmKlE/UjdFVncRCa3uITb3D8Df8Yj9bX/ABhfhm//AEZ4gf127fjev6u/+M1f1yf8Zb9SN9hfPxRZfo7xF2+pD/aY9w/x/t4Ovodw8L+Idhs/Em17F9UW3bTuj+ue/juPED+pm+RP4bubeG8t/wDZKbZ75DDHbw/XVuCItk+5syESbxDDFbx9/EH1eeHfEVx4c8EbD4ZX28V+H4vE2yeBvGEnhqSGaG4R9af/ABmn3fq+8cq8J3W37pt+7QPxN412Xwzbb1u11vm5v6qF2Vp4Q8f7vZweEH9TG4w2m8+/2L8WxxxeJn4HvLRPhL62Ly1k8HcHsG+2O4bJ9bZsL/ws/q+kRF4y9+sX9b00U/iz6t9yTtfi/wB/sX9bNvDH4t7fUpc28W3e/wBiHfEKve31eePj4Xk2/dNv3SDg/Ffj/ZvDVvuF/c7pevwb4ruPCW6bJ4l2fxBbPfvFWy+Hbbxb4ouvFe6/cikXDJ9XG+X+/wDhrtwe4fW/tkF5F9b3NlHfxJ4Q2bxRD4Us7rw39ZP1p/8AGafet727tDJ4g3uVK1rkPYSLSDItXYKKTzpXWvYSyAGRauwkkAK1nsCQ+dKySp8HzpWVKV3StaXzpfuwXd1bFe87tIkqUo94p5oFfprd6SSySq+7tUMdzulht9ntdp2vYV3Fn4Q8W2ngW3g+t3w1LN9yL/mtX1p/8Zp/v0t512tx4D8SXHijYO9zte3Xqk7FsyFfcj/5rVv/AIfh8TfWp/slNjf+yU2N/wCyU2N/7JTY3/slNjf+yU2N/wCyU2N/7JTY3/slNkf+yU2R/wCyU2R/7JTZH/slNkf+yU2R/wCyU2R/7JTZH/slNkf+yU2R/wCyU2R/7JTZH/sk9kf+yT2V/wCyT2V/7JPZX/sk9lf+yT2V/wCyT2V/7JPZX/sk9lf+yT2V/wCyT2V/7JPZX/sk9lf+yT2V/wCyT2V/7JPZX/sk9lf+yT2V/wCyT2V/7JPZX/sk9lf+yT2V/wCyT2V/7JPZX/sk9lf+yT2Z/wCyT2Z/7JPZn/sk9mf+yT2Z/wCyT2Z/7JPZmj6ldhD2DYbDw5t3aVWEe2+PvrF3qODxB9bC5vuR/wDNaof+a1f79N+3mDYNp8KeJIPFW0dpE5x/V94WvfCe1fdj/wCa1Rf81q+7v/1gbDsF34d8U7R4ng3vfds8PWWz/WTsG63r2HxXtHiI7B4gsPEll4i8U7R4Yg2D6wdk3673jdbbZNt2n6ydn3i83bc7bZtu276zvDW4XO430e2WI+t3w8ZIJUzwuLxDt82/PbN/sN2vdm8Qbfvq9/8AEm0+GrXY/rF2Terx7n9Z/h+wvNo3jbt9st13S02Xb/D3iLbvE1hd3dtYW0f1seG13CFolRuP1l7Ht257VuUO72D3vfds8PWW1fWX4f3K9cnjTZIvEb3P6yti2vc9m3rbt+sfEPjraPDd/wCH/Edn4jt/ueINlg8Q7R4T8NweFdo/mY/+a1R/81r+79V6bSS+sbXZIL7xwLWTxr9bCdrT4Y24zK2zYv0l4ef1Pmvha+TaL+tu6t/D53b6xv8AjC/AP9NBa/WF/wAYYq63XxDaADG0hjH1vdtvIH1uPwNIlHi36sKKPiWO2k+s7xp4hvdi3bf1XX9H/Ay4IPAX1e78rdR9b+7wRWf1abvtVv4q+tpSx4Z8TXidt8N+E93k33w/aI8Tnx7YC7Fk/Hhtj443GDw+pV3cxWVrJvW2zWu230e57fdb3uWweMfqs202XhjxiN5P1jbAN4G3fcv7612yz2ndrDe7H+Zj/wCa1I/5rX93xB9Xuzb9e+G/Ce1eF4t/8PbZ4ksdr+rHYtvvHtPhfa9o2/w74dsfDNh4j8K7T4og2L6utl2S/wB52q33zbNq+rHa9ovd42u33rbdx8G7XuO2OPw5YxeIu2/fVzte/bvs21RbLtu//V3s2/7hsWx2Hh3bvEHhva/EtptH1b7Ntd89z+rDY7692TZNu8P2Nx4U2y78Q3fhHabneL2ytdxtE/VJsAXDDFbQ7j9Wmzbjue07bFtG3vfvD+2eI7Havqv2Pb73e9qi3za4/CWwx7VsWzw7Dtdr4Y2613Tw74etPDVl4k8B7V4mv/Dfhq18M2/3PGey3HiDw59X/h688M+Hv5mP/mtdytNh9dH+/S7urexttu3Ky3az/mdukTuH1y+O/BA8VRR7t9cG2p/pL9bj/pL9bj/pL9bj/pL9bj/pL9bj/pJ9bj/pJ9bj/pL9bj/pL9bj/pL9bj/pL9bj/pL9bj/pL9bj/pJ9bj/pJ9bj/pJ9bj/pJ9bj/pJ9bj/pJ9bj/pJ9bj/pJ9bj/pJ9bj/pJ9bj/pJ9bj/pJ9bj/pJ9bj/pJ9bj/pJ9bj/pJ9bj/pJ9bj/pH9bj/pH9bj/pH9bj/pH9bj/pH9bj/pH9bj/pH9bj/pH9bj/pH9bj/pH9bj/pH9bj/pH9bj/pH9bj/pH9bj/pH9bj/pJ9bj/pH9bj/pH9bj/pH9bj/pH9bj/pH9bj3bcfrW3jbvD0n1oeG9u/pH9bj/pH9bj/AKR/W4/6R/W4/wCkf1uP+kf1uP8ApH9bj/pH9bjn3H64d0R4G8FQ+FLX/kQf/9oACAEDEQE/Af8AtIz/2gAIAQIRAT8B/wC0jP/aAAgBAQAGPwJNE869n/dx+X9pXwZkF/yf5KEpA/WC/wDaov8ABP8Acf8AtUX+Cf7j/wBqi/wT/cf+1Rf4J/uP/apJ+Cf7j/2qSfgn+4/9qkn4J/uP/apJ+Cf7j/2qSfgn+4/9qkn4J/uP/apJ+Cf7j/2qSfgn+4/9qkn4J/uP/apJ+Cf7j/2qSfgn+4/9qkn4J/uP/apJ+Cf7j/2qSfgn+4/9qkn4J/uP/apJ+Cf7j/2qSfgn+4/9qkn4J/uP/apJ+Cf7j/2qSfgn+4/9qkn4J/uP/apJ+Cf7j/2qSfgn+4/9qkn4J/uP/apJ+Cf7j/2qSfgn+4/9qkn4J/uP/apJ+Cf7j/2qSfgn+4/9qkn4J/uP/apJ+Cf7j/2qSfgn+4/9qkn4J/uP/apJ+Cf7j/2qSfgn+4/9qkn4J/uP/apJ+Cf7j/2qSfgn+4/9qkn4J/uP/apJ+Cf7j/2qSfgn+4/9qkn4J/uP/apJ+Cf7j/2qSfgn+4/9qkn4J/uP/apJ+Cf7j/2qL/BP9x/7VF/4Kf7j/SO23+UORTVRjTqPsf8Ajo/wo/7j/wAdH+HH/cf+OD/Cj/uP/HB/hRf3H/jaf8KL+4/8bT/hRf3H/jaf8KL+4/8AGk/4UX9x+/3NLuJHtJGC9PknVqlSnk3UGksf9Y+Bc6FnSFEaU/Klf6/9+tpaS+xNKhBp6KVRo2zbUlMKKnU1JJ/mr6wsuiGaNRKfLqSF/wALvflH/wAFH+/WO5i9uJQWn5p1adxvUJRMmRUaseBxpr+v+an/AN1f9Cg735R/8FH3kbdtsfMlX+AHqfg0r3uVV1N5pQcUf3WUCyKPiJFV/WXJfeH5Tcxo1MKv3lPh6vE6Ed49qlkMUakqUpSdSMQ/9qE3+CHc7vaXckq7fHpUBShUB/X9yz3Se8lQu5jCyABQVf8Aj834B9N/MD8g13e1Se/xI1KaUkp8vN0Paz2mVZjRcrxKhxGlX/j834B/49N+AZ913GRK/LJIIaRfJEkEnsyo9k/D4Htb7ReSqhRcZDJPGoFQ/wDH5vwDRYwyGWKWMLSpXH0Pa2ubq8lRNLGlSgAKAkVo5N0jvJJJMkoQlQFCT/odk7ftseazxP5Uj1JaVbxIu7m/MEnFH91lAsjGT5pkVUfiWvcdikVdwx6qjP7wD4U4947OzjMs0polI4ktM3iKZUkp/vURokfM+bx9w/3tf91qn8OzKRKkfupDUK+Ra7W6QY5YjRSTxB+7a2SzRM8qIyf7Ro0bXtwPKQSaq1JJ8z/NT/7q/wChQd78o/8Ago+8N1Un+MbgSa/yEmgH9fYoQsKI8ge3vVunGHcE8yn8v8/937e99eEfuYAn7Vq/0O2521KlUC6fMCo+5tX+6E/cj3GzRhDfgkgcBIOP49tq/wB2/wDIJ+5Ptl4nKOZNPkfIj5O42+f95brVGf8AJNHabijjbypX9gOrTLGapWAQfgXtu5gewtUSv8rUfwF2Vhx58yEfYSwlPAPbdqSeOcqh+of19obhSf4xfgSrPwPsj8OxEUiVkeh7SptRjb3Q5yB6V4j8e134hmTVQPJi+Hmo/wAHblcxOfpXXtaeIIE4qlPKl+Jp0n7tte0y93kRJT1xNWndbZBjBUUKSryUn+an/wB1f9Cg735R/wDBR97ao0cPdoz+Iq7qazkMUshRGFDjRR1/U4dwtJSiWNQPHj82lf7QBe1SeeUg/g77jen++ypR/gD/AEe0sJ/Okp/FriPFBI/DvtX+6Eu5mtJVQyZxjJBodVerTcwbhMop8lrK0n5gu3u6U50aV/4Qq7JZGouP+QT22r/dv/IJ7IhtLuWGP3dBxQspHE+jXsl/Oq5hXGpaSs1Ukp+Px7boE+clfxA7WK1KykgBhV/kaD9VHe/tW1Jh/kcf1O3WRVNqlcp+wUH6z2u8TVFqEwj/ACeP6ye23pHlbxf8FDCbOQxG6mESiOONCT/A7O7tJChQlQDTzSTqD22tXmY5P4R2gUOK5JSf8Kj3DcbbSWGIlPwPB+/idfvAVnzK9WXrV2G4zfvJ4UKV/apq1E/lnjI/X92CzQaKnWlAP9o0aNrTLzlZFa1cOpXp3XLxwBP4PffGm7XplUVYotydAfy0Hlxo9s8bXW4KUdyuKe71OqP7PChdfuTf7q/6FB3vyj/4KPvbV/x7Q/8ABQz/ALvj/rYcXUPZH8D2uhr1r/gHeBfnNJIr9dP6nGhZoZTin4mhP8A7bla/6XcSfw99q/3Ql3X9uL/g47WH+6I/+Ch2f/Hx/wAgnttX+7P+QT2R/wAe0f8ACpo/3TL23P8A3YP+CjtuOzq/kzp/4Kr+p3Vif7/EtH+EKPdNwkHUkpgH2an+py3MnsxJKj9jmupPamWVn7T2sf8AdEX/AAUOxH/Gz/yApwSLNEpkST9hf+1SH/Ce3Ha7lNwIkLyx1pUjta/25f8Ag5e7f7p/r7bT/wAe6HJ/u6L7tpdS+xDKhZ+SVVaNx22TmwyefejXcouJIraRWRhHD7C9supsgja9I4h7GnD7s3+6v+hQd78o/wDgo+9tX/HtF/wUNX+74/6+2Iu5QB/LLBuZVS04ZGvfaoT/AKSlX+H1f1vwvAFUEl0qv2jD/kLtdqHCdMcn4pof1jvtX+6Eu6/txf8ABw0xQoK1rNAA7W2k9qKJCT8wHZ/8fH/IJ7bV/uz/AJBPZH/Hsj+FTVdhB5UEK8lf2tB23T/dn9Q7WYJom5yiP+UNP19ryOI1F1cyT/LPy+x3lPbuaQJ/y+P6q97D/j3i/wCCh2P/AB8/8gK+7a/7sl/4MXu3+6T/AA9tp/3Qlyf7ui+6iCEZLkISkepLTY7jQTrkVIQNccqafq7lazRKRUv/AGpIaY0blHko0H2/dm/3V/0KDvflH/wUfe2r/j2i/wCCtX+74/6/uhCdSrR29qOEMaUf4Io9kof8WCJP+Un+gwoebsLz/ToSn/AV/o99q/3Qlm3u40zRq4pUKhia1sooljgUoAPa02OBWXu1ZJPgpXAfh22r/dh/4KewnvbSOaQCmS0gmj5dpCmFPokUcl3cqwihSVKJ8gHe7nwFzKpY+ROnaG8i9uBaVj5pNXDeRaonQlY+ShXtt20pPDKZX8A/r77f/wAe8X/BQ7H/AI+f+QFO1vr+yTNOsrqok+Sn/tNR+v8Auvb07Vbi3EyF5U86Edrb/dkv/Bnu3+6T22n/AHQlyf7ui+7ZTSnFEc8aifQBQabm0kEsS9QpJqD3u6f6Sv8A4K7rdU2nM3DmHFWuVAoB+Gru2tTHdzrQJjrUlQrqx3MsqghCeJLkurKUTRGOgUnUaRgF3vyj/wCCj721f8e0f8DV/u6P+v7u2237dxH+ANT2mSD+4jjR+qv9bsLv/ToI1fil7bdgfu5FoP8AlD/Q77V/uhLXuW4qwgjpU8eOj9/2uTmRBRTqKah7hdbf/jEUK1I+YDVPOsySLNSo6knttX+7D/wU9otr3CYonlCSNNOo0HawtYZMLS4z5gH5lJpSvw+5bIJqu0JhV9mo/V2v5UmscKuSn5R6fw177d/x7Rf8EDsf+Pn/AJAU7PZ72ZSbnNQpj+0rTttX+65f4R2t/wDdkv8AwZ7r/uk9tp/3Qlyf7ui+6EpFSWmLcEKiUuVa0pVxCTT7nLhQEJ9EigY5iQqhqK6695r+7VhDAkqUfgHIi3WbLZoVU/2/VTTc2iDJdJFOas66/B3vyj/4KPvbV/x7x/wNX+7o/wCvtGpVqSSkfmdhJtUZj5xWFa14U7WH+ws1/gk9p90vObzpzVVFaejg262ryrZAQmvGgdxJ/wAV1xyfrx/r77V/uhLuv7cX/Bw9y2wnVKkyj7dD/A1wr9mRJSftc9qvjCtSPwPbav8Adh/4Ke0ZH/FZH8Knt9/WpmhQT86a/raroDqspEyfYek/w/c3JPlzk/8ABe11/u1f8Pfbf+PaH/ggdl/x8/8AICna/wC7Uf8ABu21f7rl/hHa3/3ZL/wZ7r/uk9tp/wB0Jcn+7ovu7f8A8fEX/Bx92Xa/B9j737uaKkpXhxp8HHsfi2z9ymn0QvgKnhXvabTCae/SdX9lHl+JdrttuKctAy+KjxPa9+Uf/BR97av+PdDkI8pov4WHF/ZH8D2ofGT+rtd3p/vEFPtWf9DtT32L/CD5trKmVPCqTV7pb+Zt1kfNIqO+1f7oS7n/AHZF/wAGaICem7iXH9o6h/B2vkpFEzkTD/LGv669tq/3Yf8Agp7I/wCPZH8KmLUmqrOVSPsPUP4Xf2B/v8K0/bTR0Pfcv92o/wCC9rn/AHYv+Hvtv/HtD/wQO0UOCbkV/wABTtQOJlR/wbttP9iX+FPaD/dsv/BnuoH+knttIUKHkJa/93RfdCkmhHBom3FapFCVaUKVxKBSneeOE0kUhQSfiRo7zad1WmzvkzEq5mmQ4fqe0bRsKhc3yZq8xH5QfKv62B22ncAKoikWk/bQj+Bw3URqiVIUKfHte/KP/go+9t5QamFJjV8CkufbL0VinFD/AHXHdXN2qeKNWWFKVp69tu29BqqFClq/yzp/B23K9p+8lQj/AABX/kJ31zw5cEivwSXWr3O0J9hcax9oI/qckJ4LSU/i5bdXGNRT+Hbav90Jdx/uyL/gz2++8opkE/Kuvbb90SP3iFRE/wBk1H8Pbav92H/gp7J/49o/4VPcdtJ/eoTIP8k0P8PbcbPgI510+VdO+5f7tR/wXtc/7sX/AA99tuITUCBCD8CgYlybXe+wvUEcUqHAuHcbi7Vc8hQWlFKdQ4V7W1kg1NpD1fArNf4O01jXrtpjp/JWKj+tyWtwnOKVJSoeoL5nvq/d61wprT0q0W8IxRGkJSPgHabbXruJs/8AJQP9H7tjHIMkKnjBHqMg0wwIEaE8ANB9z3y5jMU59pUemXzZmsIsp1acxep+zvPtcnSpXVGr0WODPhDxUDbmBREUivL4fL0LEsCxIg+aTUO9+Uf/AAUfeXb3STJYXBGYHFB/aDFzt06Z41fsnspdxKJbj8sKT1E/H0dxul2fpJ1V+Q8h9naIrmQlcskiiCoDzp/U9y5c6FLkj5YAUK9ena9tZ1hHPhBFTTVB/wBF/wCMR/4Qe6IiIUj3iShHxNe21hU6ARCPzBzRxzIUoyxaBQPn2sr1U6EmWJJIKhoaavOKeNUltMhQAUCaHpP8Pba1yKCUiQ6n+yX/AIxH/hBhUKwsC3jGhr5l2UsisY5SYlV/lj+7R/4xH/hBrubdaVpuokL6TXUdP9XfckyypQeajiaeT1uI/wDCDnI1BkV/D3O334K9vmVXTjGfUNNxt9widCv2S6lqAkFzeH2YkHz/AJXo5twvFZzTqyUe3vkaeZBIMZUeqf7oabjbbhK68UHRY+Y7Kn3CcZDhGnVavsar+cYRp6Ykfsp+6maI4rQQQfQhovNyOcyJFR5ftAU171cltt9lLepjNM06An4cWiMbNN1kDj6/Z9zDcI/pU+zIn2gz4biu1zW0aFaHgaoy4O8+Uf8AwUffytZlRH+SaPCS+mI/tl5LJUfj3oFEOhUT2qk0ftn8XU9qBRH2uilE9qBRepJ7VD9s/i6qNe3tn8XVRr36SQ/bP4/drbyqj/smjxXeSkf2y6qNT9zOFZQfgaPH3yWn9svKVRWfj96zt5hVEs0aVfIqo0WNhEIYY+CR3nt4ziqWNSQfQkO62TfduV7yJicgBU+Xm0RCykBWQOA8/uy/7r/6FB3nyj/4KP8AfrFcxe3EoLHzTq07jdoCJkrVGqnAlPn+v7gXd20cqh5qSCwpFlCCNR0D7sv+6/8AoUHPtNxIYo1oCiU8elFX/js/+8/3H/js/wDvP9x/47P/ALz/AHH/AI7P/vP9x/47P/vP9x/47P8A7z/cf+Oz/wC8/wBx/wCOz/7z/cf+Oz/7z/cf+Oz/AO8/3H/js/8AvP8Acf8Ajs/+8/3H/js/+8/3H/js/wDvP9x/47P/ALz/AHH/AI7P/vP9x/47P/vP9x/47P8A7z/cf+Oz/wC8/wBx/wCOz/7z/cf+Oz/7z/cf+PT/AO8/3H/j0/8AvP8Acf8Aj0/+8/3H/j0/+8/3H/j0/wDvP9x/49P/ALz/AHH/AI9P/vP9x/49P/vP9x/49P8A7z/cf+PT/wC8/wBx/wCPT/7z/cf+PT/7z/cf+PT/AO8/3H/j0/8AvP8Acf8Aj0/+8/3H/j0/+8/3H/j0/wDvP9x/49P/ALz/AHH/AI9P/vP9x/49P/vP9x/49P8A7z/cf+PT/wC8/wBx/wCPT/7z/cf+PT/7z/cf+PT/AO8/3H/j0/8AvP8Acf8Aj0/+8/3H/j0/+8/3H/j0/wDvP9x/49P/ALz/AHH/AI9P/vP9x9V3Or8P7jTtm3JIiSSrXUknz7qWPyglrm2qxRcRoViSlI0P4uMSbWkJKhXQcPx+7L/uv/oUGv8A3Uf+cX+/W43a5BUiAVxHmfINO6wRmHqKFJOtFD491I/aBDuLK+kRIuWcyDCtKUA8/l96X/df/QoNX+6j/wA4vvHbpOZc3Y4xwpyI+bXLtshyj0XGvRafmGb/AHSXlR8B6qPoA02CxLZSS/u+enEL+R7XSNvWc7RWK0qFD8/k1X+3ZctKyjrFDVLTNuchyk9iNIqtXyD/AEcBJaXavZjmGOXyc+6XleTbipx1Lt7O2tLpJuFYpUY+jX4gufdLuvJt05Kx1LhtvprfnmiFyoxQT86ua/mSpaIE5EIFVH5B8n3S75g/LyxX8KtE6agSJChXjr2n8OIy97t4xKrTpofj9va/sLTLmbcsIkqKCp9Pwd4ixyrYymGTIU6h6P3rdJcctEpGqlH4Bp29aJbK4k/dpnGOfyPZVnCia95RpIqFNUp+3zadw2yUSwq/UfQ/FzbnfKxhgFVU4v8ASG2E4BRSQoUUCHJeXkgihiGSlHgAwhUc6LZRxFwUfR1aZIzklQqCPMO42pcFzLNbHFXLjyH8Li3GBC40TCoEgxUPmOxv90l5UfAeqj6ANNjIJbNUv7szpxSv7eyfC6lq98Vpw6KkVpX17XO1TRXC5bXRZQio/hadx2yXmQq0+IPoQ49tvI5pJpEZgRJy0/FyXFnFLEIlYnmoxP2fduNouFFCZx7Q4gjUNO1wyGbqK1KPmpX81L/uv/oUGf8AdR/5xfe3yS/CTu3vKs8vbw+FfKru5dvRCm7XTn4Uy+GVH4ai3b/EDzPa9jmeVfto85MU3aZEe7U9rKutPsdsq4/emFGX9rHV3Hjey+lgivJba5i/2GaGv63Ir1uJP6nEN5pyvdh7tn7Of+3V2kl0mD9ICvIypzPjR7p/usf8GD2tNyi1/RPKFCP3uGPT9r3X/dX9Yfh7wddWKNvil5ao51cVpSOKfm8XeUSP8Sr9vT33Wv8AxTR/Ajt4siWaK56FU+HU/EMqdQvcZaF7IN3p7pyTysvZ5utP10dtPNslvcxIWE206lDPJQ1oOId+q1BFx7vJjTjli0z+HrWO8vtebGpQSSuuuR+XB7hYjbYtuTYyAUh9krVXL+B2GxSSYJvJQuYjWkSD/d/ge67NtEhO33f0tvXTVPEfgf1OIa+7m6i59P8AS9f66OCTZdstr/axHkvNQCEoA0083abpJALczA9A4AAkB+IleGeRmF/Sc/08qOAX+PvOA5mHs5edO3hyPdv9p+vtezzK+f6naq3RMFQscjmU9vyxc15OaRwoK1fJOrn31cihvyr8XCdNBGPKvzdtuEXsXEaVj/KD8U3tht4vkgJ5hPCMaa/Fi7UtKjuEip6J4JrpT9TsP0Dy/fPdDTm+zTqq0/p3le91NeT7NPL7st/er5cMIyUS0bjtsvNhk8/j6H+al/3X/wBCg/8AhM/84fvfpLOSzuz7S4TTL5uRNgFLlm/eSyGq1P3Hc48k1qkjRST6guK+uJZr5cGqBMqqQfl2utshBkgvJFySBeteZxD/AEdt+RizK+s1NS0RbighcXsSI0Wn5Fp3PmS3lzH7CplVx+Tn2q7JEVwKHHi7e9gvrpXuygoJKxjp9juNruiRFcJxVjxdjti1SR/o3DkyJP0icPj2l8TJKveZYuSRXpp3k3mW6ngmkSlJ5agB0ino4dthkXKmGvVIaqNTVndFSS2twsUWYTTP5tG27cnGNOtTxUT5l+6bnHXE1QsaKQfgXHuM0019LB+756skpPrTtLe2001iZzWRMKqJV9jTt+2R8uNOp9VH1JafEd1lNPHHy0oVQxj40dlvaEmC4seHLokKHopy2N7GJYZhipJ8w6G5uVWwNeSV9H8DRbwJCI4xRKRwADuN2Vc3MM10clctYA/gcO3QrXIiEUCpDVR+fY2G5x5o4pI0Uk+oLjvbiaa9MBrGmVVUp+x3G1TyKijuBiVI40f6H90QYeXy60GXzr6uHareRckcFQkr1Opq9y3UZLXugAlSr2aAU0atvsVrVCVlYCzXGvkPg49xu5popo0YDlKA0/By21rPLOJVZfSqyp8vu3e12qgmaQAprwqk1o07ffkGZUipCE8BlTT9X81L/ur/AKFBwy3JxTOiif8ALjKR+v8A36y3l0vlwwpKlKPkA47/AG+UTQS8FD+au5rY5IgQQo/2EBJ/W4rqzl933C1/dr8iOND/AFF+5yWXvWGmZSlVftBf+0r/AJRf6L/2lf8AKL/Rf+0r/lF/ov8A2lf8ov8ARf8AtK/5Rf6L/wBpX/KP/Rf+0r/lH/ov/aT/AMo/9F/7Sf8AlH/ov/aT/wAo/wDRf+0n/lH/AKL/ANpP/KP/AEX/ALSf+Uf+i/8AaT/yj/0X/tJ/5R/6L/2k/wDKP/Rf+0n/AJR/6L/2k/8AKP8A0X/tJ/5R/wCi/wDaT/yj/wBF/wC0n/lH/ov/AGkj/cY/5Kf+0kf7jH/JT/2kj/cY/wCSn/tJH+4x/wAlP/aSP9xj/kp/7SR/uMf8lP8A2kj/AHGP+Sn/ALSR/uMf8lP/AGkj/cY/5Kf+0kf7jH/JT/2kj/cY/wCSn/tJH+4x/wAlP/aSP9xj/kp/7SR/uMf8lP8A2kj/AHGP+Sn/ALSR/uMf8lP/AGkj/cY/5Kf+0kf7jH/JT/2kj/cY/wCSn/tJH+4x/wAlP/aSP9xj/kp/7SR/uMf8lP8A2kj/AHGP+Sn/ALSR/uMf8lP/AGkD/AH/ACU/9pA/wB/yU/8AaQP8Af8AJT/2kD/AH/JT/wBpA/wB/wAlP/aQP8Af8lOfbLjaqRXCcVYoFafixtljtRMQUVDNIJ1+1/7SB/gD/kp/7SB/gD/kp/7SB/gD/kp/7SB/gD/kp/7SB/gD/kp/7SB/gD/kp/7SB/gD/kp/7SR/gD/kp+5os/dOZoVgJT+slrlmXz9wuf3sn/II/wBvX/kQv//EADMQAQADAAICAgICAwEBAAACCwERACExQVFhcYGRobHB8NEQ4fEgMEBQYHCAkKCwwNDg/9oACAEBAAE/IY5yszADn0P2/aPSD0z+R+//ANa79+9/379+/fv379+/fv379+/fv379+/fv379+/fv37t69evXr169euX7927/XPcoUDDOPvY//AMhyq8MKZMnR/wA5ixczDH2WUqCfMLw/f6uLPMOvH+yv/wBavQnb6Ao+mphXkgyq+f8A8rHhtwZYeuH/AOtiTjg+Og0P2XUAZRwoDxPT/wDQbSTCf99J0PNSF9QP15fMldlvjX5D9UF1vEhzMz4wPzXIyIR6f+m6zqBIY+WCnbRlLFQkp48a/wDwepyQeCf+bvh5QvQCigwxymz6M+qikIT/AJE7QMhLA/H/AHc3HC9se4S5kAnLHaYfQ/8AIVRADKhvmP8AnYM+sDkhnhP+RG5+3IT4mmjs4I7Mei/85AQfO30i891/QZG/mSn6CD5kJD8lOiUP7TwE74bx/wADlsmUXROT8AwyviKzzGSJ2tBwEzLrFH5/NSz0mAcif/hTQXHIGk/NBRQp25M3/wDQRaQb5D3PqKR/450NAU/5Ae4RwFj8mP8ApuQEvgT/AA/+Q3If+Faf/ipJ/wAH8c6Oh/BH5n/n7r/hIc/8D+lrn8SVpf2iMpKpJ0vsSPsksRzG7CRvNsm9C5mUGj0x/VyGED4KuL/Ro/5g0eY/N9a/K1QJbyJBCU/F5xodSw8ToXwGPT/wmEvPoC/I/P8AwSGD4v0/4cFJzqk3uBPo/wDw+5dMY4T7iwG8SXmEnJCP/wCGSY7/APzJYRwQPtGv23DAdA4V6dbZpU0XbTyHubm8fsCbgmZXpF/X/UGRBeyX/kyEn45F5wS/aP8A8FNL+QjESG7VmmMQPCUoi8FeIP7Xggcfmf8Aj/n7L/gEXanGdhG1/wBtqL8LYD3/AMOOCX8uf2/8X2sJl0ggE/BZf2N+n50/wZ/wjfjh5/5huQDsrsk4lOHqcPqze6BASeQJRkmhOYS+iL+f+C7Hshl/AqGSd8uH6maVM5h8nkmiJHy20+2nLL6I4/h//CIBvOBIL+anbJsGCYdAB/2Shwpywmua3jeHzCMdEs3CWHtPS4xBBknmqDhP/wCD9H/+NhKU/wCUUob3Uv8AZ+lizXW/9JvI/hfQQ40+E/kf+Q/gA+Fp+v8A8RFgg7n6n/n+x/6Qv8N4P+Of+YSO8QaRVk/MtPFnpqso0P3oy12pmTzN/wBdMdRNJ5xbwCtUKB7ftwUQ/X/Xn7D+H/P8x4v+A8v/AOGYfPdYC/RSEygGInIjwn/UArRuTGP6WY8H1RZFF9kNHqD5j/8AD+s//HwlP/bkjJ6gCMPzXkbu4/E/9cxDNokaGPoQ/t/wDkGfo/Yf/gYVjuFUANKrxf1iRsb+v/5/uf8AgFjratlBkwD5f6/45/4ZoQXj6P6D/h1cnIi5P4qLXA/Y/wBf/Wn/APxkZm/yHh/0f+C8v/4Yhrp24D80flHuACXn/qQZCPAGrd4/lqEAgnvBed//AAfpP/x+Jz/iY/8AxJAfKAe3C8RYvp/peMAz6n/SuMgSfdMw5V+z/wDBZApKCaNMbxtLSfDH/AyrJ6EfMSfv/wDBpgIahQ2Ja5d2UZX6oyeAUGWw4IMesD8R/wAR+PgMD+K5so/QH8/8l4WL8xP/ANaWt+vpv7EiyBw+KB/vs2qstRRHV8/8/wAj53/EeT/s/wDJeX/8ID3K4QK/BS27DAek/wC8SlxPtUuBEiD4DxE3XWAhzJ424L1/0vYSuAPlqqLJSMYfSf8A48Sn/Fz/APiuIpOg9H9B/wAkXfWtSJ8r/INfnxHoE/8AwGILYAJS4Z8tQoUWQRSJ91SwckmJXHmOKh6Tsh2r/wDgUm2cRsJBetKIkldMrgNAfA8f/g0W9Pf+Wf8AM948MEo+ZP8AulqfqaDQUEknuff/AOCn/nvO/wCO8n/cf5ry/wD4UDPADVXq49ykCBnUov8A1BIbC15YEjzhYVC0AgOEnv8A764JsFn/ADkzCe45jY4K1/Ox5IGH/wCPEpez/L+aEg81dJay1StHSLAxR/P/ADhEkv8AG/b/AMbCCy5AYPgvJ8HzDgloQEv85f8A4bPmMQb0f6lIafgAQ0UoYfcf/g1o5CVv6VC79TZVBJ9/9J+v/wACpmFj2/8Aj/jVHV/l/wD4AH6en+J8Lwf9o/4Lyv8AhvJ/z/Ae7/mvL/8AhYK9f/gzjbtvikFUQcej3Z3YISjQA9PEn/UBJs9wp9g/FOaJiITS3tf/AMjE5/xcoYSMfRI/umRPJTA3P/J8f8kRkiPgJ/CqxrUU5zGyUTcAT4yxuSKf4KT/APBz/K+NxG+hH/KXywlif/wrX248wvH+8UkJhvk/5VAEJj/+Ez/Def8A+AwLkyTxNCXkMPcLxfH/AODRgDkv95/xE0lD4dP1f895f/womWKOROG/LLckDvZJ/wC+m9eMF+a4g30AIS+Q5TeBW5G/ZrxFKpqH/PgsEX9tKkTb2hDP/wCRijOqvJH8ReIvtyPIPY6UougzIpBeLxhSCi/xAfz/APJ74S+lpDTIp9oKsSl92ffAPExRKyuPhF5sf/Lj/vH/AJ3W6DH4YP0aIknDeLj3l/dP/wAMNkPDT/bfwagkPDY3IL8rf0f/AMJn+C8/+kqgJ0oP2WY8h9EBTCTERLK+D/zrbw9M/A/5zy++IE/JRnkl4HCU+h0f4ndicsnRwH4o76T7R/J//CWNKuEJGj2uBwHoP/wMYjypfB2+6qwEkhPHh/1roZ8jv+n02dUhMBebRqQkIn2f/jVLGU9Awd5yd07MTIKfJyPz/wAjO5inpY4e2yskR66n0M/4/v7AOci+BdZ9jJRxH3/wpuyIPB3uL/wv+6LcIyRF5Hz/AMG5miCJPuxSFFDE+B9UVCYlBbWk4gy9NMNYiJIAf+JqyCwEjy2Ln/D917XRITwyU7TWUEMEtP8AC/7q5HMECVMff7/6m6pBqJ7tTSOP8+ao8hE7F/8AZX6rpuJdjklDIciD+Tk+6oJICgmxCGPJEw/dmMl7j/R1/wAOxKnxtMn6LFmGgT45f+RpdLBHg/s2K5tMnz+Xl/8Awr5DblEj+bP1WjDJC97H1/1QKwKm8zaAYxGPDXj3KyeUWpB8/wDQEMYzff2emqholQCEyjJ//Ide7jL/AAvphb/sqlZ5VL/2KI8C0qEe3/k0C8mX/wCuqlJK/wDAw46FS4B7V/5CmDoWiwZ7f+ISQni//XV6QvLtFUjCX/66syF7Z/7I7vhi/wD1X/4ZFf2/wvoGb/srJidu/wD4C4/2y/VXbn9f+lk1PbV/f/4owmLyZfqkIuCwH/fc5TCB+qOypgCCD2CMTpoisrxqijIJ3/8ArpJ08QT7pJD9l4HB3AGB1J/+BlVQUfuvlcQkE46//FlBjmLgwJ8//q6SSSSSSSTjjjjjjjjjjjghBBBBBBBBBBBAAAAAAAAAAAAD/wCdT/51P/nU/wDnU/8AnU/+dT/51ExjOpM0npIvs6f+rzz8IXLeJqCY0dNIJRM+W0TBPP8A+D9Z/wDram6vqwsxJ1K2SyK/CzGJIT/rnsP5ArhnSYM8wN//ABP1v/47NARZ4wzqQMsgZwk/+D2UYYsHP5qaiso5n40SX3VgmyNv4dqRJZUc3aDf21kuUDhUmqf4S5TuxJMfft9UPnBxLKBBnbTaSw54KjPdnd4hjMYZ5qkOWmvBFc17lIpDrsayHaf7VouhAIAJ06f+cyETq4iXOOv+e9T3DE501VC+5ieTJSMSof0393F6iii8Pc+PxVAlqvjjb+eXD1nu5m1kxDkOh4rXpeE8oAO1Wz6/EaMgvTNcwNWAXmYZWlHmY/fqmXOckTRG4ZHpIeOUfV43RCpj/gMMWDn81NX78etkSYnqfz/zI4ZQhFuXI9c5/wAXnsLPB8GN5iyOK8IFz0EsCL0dFPDxSWcCaUmdMn/4TZsO1BPpLifu4wTB0QH/AOV+lt/kfP8A/C8ZY8xxsS/kePXq60lv74/NjlWac2PV8t3dS4GXh2Nz1xZRJCfMhr7p35QnPMfn6MX3Rv1QhIOfH6nJnPuO7BnbUMD7f+ZyeI/iEZqJ/wB39dYaXqp+nCOuZSiHICNpRCgyPRP/AGYEf8QrrCTDDbHgkssiEGic5+bOCcbnDE9T/RUal5RGPgc4ji6HDOhPEe5pOLqhxmeNy6rODrCx1Yo8jzXTGYkRsd6koAiZVB5DvJ9UnMp/Kf4TFay8QhMVyfzNgTL7wNT0hNH5kOiSdC83AG6XPt6n/kCsp+Xh8Od3ZT5+0d/FnYVHoJXZAS+Qhw/8F/FWtAx9XxVraYM5E8l+hSpd/HLxxZ/nofNvI9Xa/wC//wC0c/8A4Rhv9EH9+CjqnRwQcg8J/wDlfpb/AOf7f/iaRSArh4o77rCBHAvAuYeCvo3KoP6TX4RDjuGATHuxJFQbqOwjgMggqd2SvsGDCK5QFdNf0enKnxEFfOANssjuoOjI72VpVK4rkEBnksjbwoJI4s+KHoSPEAHDuNyhAHNio/0WjIRM4d/9FN45AHKeA7pJeBsxp+7FTz2IIwjsZVnrUk80va0OwzT7Xq/hvGZgHRABp1UnGwtZGc86GJ/F5TqHW895bwyg8dxDnXuo8Z5zdEaV0BeFSn40Zfp2j7mnDaTGAAXn8lVeuUfd7Gag6df80Rn9EabC8wZRwwCYolJqAZCxImxD6oUaqppEShPlPmhuZGQpDAMnMs2jsDxQR33N9nHtfxKkzbgYK9rds5CtmIIiAQf/AIeF8K0Mp6mIrx7MmENdx/8AlP0F4BUK9v5Rj/8AWotuCYOVpPgn9wTpOz/8qONOcD/RlHxziSVqNIdDhu3LJqDOJPy7f8ov/KL/AMov/KL/AMIv1/xv1/xv0vxv0Pxv0Pxv0Pxv0Pxv0Pxv1Pxv1Pxv1Pxv1Pxv1Pxv1Pxv1Pxv1Px//T6RAgQIKFCgw4cOHDhw4cOHDhw4cOATZs2bNmwOMMvIM7CjdkPPY5/+TMWLFixYseZitDwc5kfW3BkXqO9didV5b/8AsF//2gAMAwEAAhEDEQAAEOAEAAAAAAAAMMMMMMMMEMMMMIIJIMMEBIKAACCABCAADABADADAACBCDBAAFKAAAACIAAFCCEBIEPDABMGNEKOOKLICAAAAKAAAAAADAIACCALEBBCIAEGLEIHAAAFABFCAKCAAJAAIPKBGCBBPIBBADPKMFCAACFNAECKAAMPIJDBAFBBBKCBEAJCAKBIABCEICOAKAAFHAOICBCPFGLCEHAMIADJIABKAFCFCAAAAAAEEMAIIEEEAEIAEAAEMAAAKECAAICAAAMMMMMMMMMMMMMAAAAAEMMMJAAKAAKKABNPKAPFEIBEAOJINLKJBGBCAEIAAAAAIAAMEAAAEIIEMMEEMAEIMIMEIAFAAAAAKAAAAAAAAAAAEAAIAMMMMAAAMMMIIMMMEIP/EADMRAQEBAAMAAQIFBQEBAAEBCQEAESExEEFRYSBx8JGBobHRweHxMEBQYHCAkKCwwNDg/9oACAEDEQE/EP8A+Iz/2gAIAQIRAT8Q/wD4jP/aAAgBAQABPxAGkpzBqNGwDciIoYo6gwXgMDqV/wDgfv365H/6tfHjx48ePHjx48ePHjx45MmTJkyZMmTJkyZMmTJ0vHjx48ePHjw4JQf8unD/AOPdmOEHKlnQYnzNmY3/AD64MF/51kfZYF3f8AIHKofzUzGi4cmeCmdzoysxDAYnUK6Vhc6uNMB7Y/8A61a9eoC7pwZI90jbcSdHxKfAEBn/AOSgiOjSc8M3AMh30HP/ANUyIf8A8UP/AOMtzgQCqPIBJ3VWgoAC0sQGTo7v/wCUo+D/APj5Dj4nML6fuL45gsOhvSToH/zPd4mz/X37JUYQVjoQ4gbocAuUloAQgwiPCP8A0ppIUeBA1080HI+n+6jHdWmPYj8H/wCBCOjiJ0koBy07Uq/6EDH1J/Nc3pGAmQgbjeFPQQiOInT/AMiSDQQpQCuN807Uqd98ZBKSfoSgeUn4qSxVeXkEBsBJxMMWNSlSj5mFGndXS7zNy4MdP0/87jjHgyIUJdYpNqiseSEjC7P+LPPMpHSQH5XAXLDKolN7IQHkz4KuuUkz7DPYeq/iJNKqoAMMCCUEKikcT/iLSPIYAPHauBrlO48AnRCV5EQPC1HVAxfYvKgHIkwLHEsAKTyCu9R+/hDRH/8ACCtQRO4ckJE0OaCV4mAlAYAAEf8A5T/H/wDx4iajg68G9JA7UnghQJcC/v53BAyf8O5tpgcHUnglR/0fBggAfaL/AJiQz978BtSP+/5v3VAlwonCP/J/t5jkwYERP6P/AMEF5APmiJJtm5PxMGWeFQ8eJLB1LpguB6Yk9NfMKjl/ggk0xfDoIB6RGnla3wSfh/NU+fnX7NNGqHfgID8WKsoj7NPuNKQmVdY6ugzB2KgSA1XgqVQhlPYmKgEJHGidD2F9RlB0B1/yHejBYFnSgXxDv/iVrkMX85/4XM549NGvezwf/h/21IF0cE9VdGIJByAgCdOg5/8AgkVB0vYnp3/+HHxP/wAeYxvZey/tGoAGlGyFqEA0mTaDKsZELuzyCQjXTljPEUP3XJMd7jY+0f8AVyyWnIOPv/mfp0PCOz92dwkDmUX8f9/zfuhMIyolKCGMJliU3FJlaQmOT4RsBb9TJ9YpLHzmEZ8MPx/+BKYvZo+hyoJXcq9TDpJFrYkTCERv/IVeh7j+0f8AkgAgshIP5D1U6POiXovktHjmdkkfTz4/5nFRsgwv4n1/yEsweAOs45U4BdxQIqTuhQU1CvGLIj88g2A8iaPU7+KofiX5/wCH9Tx0EX6T6pA1NBwQ3GeDmWJQXwN5DKW6+uKNKGgAjiDgFQ8NKKtHsVT7D7//AAyPUpzqNgZMWbqIRcBKokSqxLzB/wAIlHwmQgHaxlNGeNbArMChNpEJyL+HI85QQkkzMjNsBh6n/wDBj/8AHEY9if8AK79GB/d5BHX/AJKOBcwWOaD/ALv2C+Sf6KU2NzoMHv8ADf8ACOfaOj7R/wB/xfumfX/yPV1bgf8A4P8Ao0oKC8l/xmfgPx/x7Acx5P6/2oUIIeJAfpasVQJCkj9uvigxZ7AfN9Ff8xFKuf8ANLDGgJeUfqL+aLx6+FJ9AtEzjOQde7IWWuyZMlGx/wAU+qwZ/wCWqf8A8SLStBPMEahyyQWCuxlHEcVciT/0yYCI9jUqWzVEpwVglIZNGFdkkhjmW0jgD/8AmGLEz9f4p/kfP/AWgBIOAOpRsSiWLzqxPr/sq3IiNnOmNyRwSS/H+f8AkT6nHbD7X/3/AAfugYmgm6ib+ABsq2LsNDj+QisAnn/8Fv4yLPDQgwRgLlvEkseF/wAJozBPx/w5W6qFqfx/f/D+WzI/twINzO9WGYPwZ8xXVf8Aj9othp6f/hlPopGf+Euf8fH/APFST5z8gTe1BR0DHARBIgkwxLH/AEJySoHkPgCamuGx4/xXnaxEsBKZK0QA0f8A8Cj2f/jDxJPV+Dv+N8//AITEwS5VA+1qODD3EAUnebsCnWrMyZPQksT324tr6/7/AMH7vOtNptCRhJLN4/VHwSPr/h4jl5BmJ5IdB/5v/jQxeKCEEVgVY933JrWohJa8zNASIr6L2us88p8Rf8X26Bj+0K9m8S/SH/BccUveG+of9XtG/wCcIDkpzhMJgDi4BXHPFpDsREGZ/wAc/wDW9blv8If/AMRJhIDwnd4BW+xRdTJA/wDYGbNNVxCo8WOPJsQ3I8tNkvAhQ5EBgAjihU6B+v8ArEsETuVgCmS1mPgMZRnj/wDHok3+BY/4ff8A+Ea4lYkQj8l4wuxY29h2ysoHt37WzhMJ4Hvy/wDv+T91us+4GINZAqUgsHUhpgTyNjLPaoNOwCjiYmo7cWsl0Ff/AMBIs/lU4ngUnwbQCSJI+qez1apkjkI9F14//AnSWyUF+mGfH/AYE3MiR+gh8/8AV7BajS3vEsVlzyGE+KIknD/3ipPxUEj/AMNz/l8//iREMI9QQANVcCl5FNRqrQCPc9/9RAIkI8JR6cAiSUCErrm04qJeMiMDpNP+kaUXdZg7XgO1C6A0AT+vvC+/tXxeYgYyDeOFDJf/AMej/KCD/wAeAz2D81xwulBVflqin6hQw8JI/wCIxg/S2Pwf82TWWImGEFeVcQEvIMHNXsVk5CP6FP8A3f8Al81x7rGzL09mL4Zfkp/iIki4n6amQ0vIs/x/wT/zRST0TkRhpPy6epL6BYV/BqRb40f/AIC3Sd6EFfsH4/4j6iV5f+7l/Ns6+L7hfFn9c/7Xc+r/AL3dyn+U/wD4iOJaEM8QVPX/AFQKYCpsafLoiBIhGYSZVxmXxRBC4THH/qJ05ISMPhVKWi+IAPLpX4g6/wDyNEg9H4tjq7OyQ/YPuoIlSA+aiBCHH0vy5/8Ah8R185+bQCkBqvVPXdDiRhOa3KqOzqlO7V7+pJd+rqyz/wA/xfuuPfTKSLB4QfZKD5/5lliEAVH0H/4Ojw8VA5ebyrPzonxZeiR9SD5CJ8Vly0HkTEf+/wCW8v8AilPP/fcvXU+jDgBJ+XKgAiCVUIfNCG4g/j/s5yfj+dXFSUGsCP4P+YsEiHVI9oT01hOxP/4bZcxUJSCcI6Nm/Ggh8jSMvSOv+7xDKNkPSG9XEdsLTJivM90MOoTsSBsA6hPuuDAC+UP+JPTEYID8PxV0GbQqUTrf/wAjQICUbYfTqZj0lUO/wjIr0ITyUH/tIgR5GhzQABAYBSMjlliZ8KJHhH/hwko3aUPun1k0iP2wFUGRVly1lU9FYMD5TZNlBwjs+5p0IKvMl/s/5/mvdgPyNJJ+ddkn0sNBNISJ2NZ5ydmRXyn4/wDm/wDhjkfFCEPr/KkHx+CojkIR7Gk9i2I4S9RR/wB/y3l/xy3n/knNMSxqXwxkWjs5H5mZfY4nYpVUGA4EDUAY7j/g4wAqeU/cl9J/wJF7+fBQk+ryzRUA75GgkcHl0pf4e1ORw0iTegBSucXdFynhifH/AOERyfyGJ4RRsVEn/BQA/wDwdbmyzuCE75XnRxhsshE+45/6BVQCf1Ss+wp1ZE4Tdm1SyGPFF+IIB3ESiP8A8UCFhpkpB2dE5ANkpzcGegMcanQCWQJcCrgJRbZGm/P0C5Zg/wAVeBJ6IPR/wjO66QAHmfdQEBiMYhYE8V3bw2X1Mig0MeB8VDmsHMXI3ERH4f8AE3H/AIAiMhGhT+3CUIcE/VcuQInIlA5vroGBEUZpA+rUkQXgvo/5BvaWMkoBKge2vEfzYUXQzKqRJhGPdETKw2tMAK3xUMRsaHCngOVhYf8AQGiV2ZQESSJNYBAqpRHNBdQhIgEfD/0MA8Yx4AtZxJvMuZjz2codgEr0GxVgPuvMDKwZBBee3Ad16jt9vwHQQDoA/wCPw8ELCwgmqPI41EISiLljBHskelqgS4FPzTw14Nkl5gDtuRILCmYwS+sEvoP/AMPCYI4xvYBKCbCwUAZypOfb/rkgFV4ApIjGuSQZaaJJ1Qr4MYQSCMu8XDYgMPJP/ZtcQc/r/QKYGxtYpBYJPE//AJHBAmcq38i+zpSUlcZUZfK/9CHvRH4GpVnpU/C/8g0eSq/JZf8AG/dbqZKrKvt/5xRSAD4Bu1fmDJ+H/gTicEH0NbPHSJ+/+A1OkVCPpL/i392Wx9ivy045EiMIniy/437pkeIllHy/99qxNKPMVTl/8PNVdf8A8HtKPJfIvuU2m+q5gSKp+V//AAcIbjD7RVYAhwp8U+5cfmpP/wCLSo6pBWTSUklSWzfJlfauq6v/AH/1ewZqRvJiFwGxomyH7EFAYWBDBrCzlLjQE+//AMH6L/8AWzwbsKiAqo8kGWJLA4YvECTpGM//AAHW+As8CFoTRi0pQ8EdP/wn8OoRMHUTIKEiFj/8hlllllll6LP/AMmn/wAmn/yaf/Jp/wDJp/8AJp/8mn/yaf8Ayaf/ACaf/Jp/8mn/AMO//wAW/wD8W/8A8W//AMW//wAW/wD8W/8A8W//AMW//wAW/wD8W/8A8W71fhv/APLv/wDLv/8ALv8A/Lv/APLv/wDLv/8ALv8A/Lv/APLv/wDLv/8ALu9X4v8A8jJkyZMmTJmalsF6ZOoEBaqJrlQD0Af9C6QA8KyfxVASyKp3YA/ZUamgwib45O1pjCCT3/8Ah8qB8/8A61oZ3yQeOhIYlGJmuqhUQ0QJShg5hM/7GqEXgWJ/dXXJYBCTKakQTEv/AONioHyX7f8A4hZD2VgGQ5QShqGVawclvjV0yCJIkyRQFiMThIDWCfAaobQi2Q5CAAMIICoCuUEXATYeHZAACkSDkJCEkqjBeAQlAJCIz3oOXH2Zr0khhIKEkJlCh5xHiS8qQCyhYYmKYbZsApkKgahRCWv8AbnzBDlyWg3AEUiIyFUcpYUnHOiMjKBc8pUnrr6yIk6JKpoEipInRFj4qLzRk5G0B06f+JTwpIzGhAqQN5kf+cSAfQmpHAMgycQjUPMisyJGiMOPqyv+hnchRYyVAklJKw9sEawJIepRLiWoEgNV4KlsxadTYEgz4GFUWKxkcK+zCV5EkRuwBgKRMiAATy1MC6kQUZJAayNgCemDKvl6AlWAJaFbrcZoojl2HGinltIJAGIjI1JxYYASqMEhKNqXrJSIhFhkyFE0f+ROx4nBQmuE+A1Q2j5AOlBACSzgcNIf8krQi3NOyDmJEpz/AIWFKd1rORAUCaCpoVO4e3vDyQiiNO2syxeZWZbg5WR0eiGEEHKOP/4SmXIYO44wlHkys3AWOIg4Ag3iVl//AC+LgfIf/hpS7VQcjnow1wX0llOTDNNhY8FFTE83ovmYYz0MDwh3JsPQkUCHB28OR2iyMt37HbZ3NkJH1lI8niFMFwtz1CFfdeXwhgjj556YcKM5hoDRdQOR5Y7/AOAGiErXQvPsTxM/8K0PrKUyYw15yAwJVTmdkgRvmnWOEIlNDzGUAIMD/kIMhJQm4zpRw/GVYK10Hgk81MNJIGwUYiSEs1USYR5Gum8u8is1JQFiCYGQsKZYoO+K8E+Qwe65ol2hmIQAgSQ2AxZtUSYgVGQerCkmUoYYUwE7IoFEAahVvAC6jWpG7J5ERoRhTHpQLJ8TXBYIiWvO4Sr6iGDBGDmU2bEZliJIAz156uHAYnDy1zRPX/AX1YmZAF4A26dyuCQ4KRYd8Bg8PinVS1Aqn4KmIVOA5WGhSOCrGkNDMPsSYfizdCL1s9Kw6JUBr3WwQER4HhdvSabEnf5ORuIJmjzRICfMh8QD/wDDwCem6QcqcDVQLG8IQ5WJK8R+SRH/APKMX5wzyP8A+LF/FSyxEMAIQsErF9MSaMiBFQAlXXaic7jzgGwY8iYiU2jVKsmUkCCSSYmKhGYkUXPL4EaACQROSq7W/wCsM6SQCABkwart7q1GWYMqBQUgxIWIM+i4iGyEgsxORTvTPlCqBIDonqk4N+1B83gSTLDWlaIKQDI5GsuI8pQ2ZHsBIQsyLACXl+aoC3AjtVMXSDiX/sdAwGZEJMgxJNnbMDCCYGKAAAgpDHF+AMzgEkSBM2eObrUxp9IAAAAL8Rtgs8qexnsG7+sFBwSfIkHQmKAQkcRrJOalFwUkqHJco8FKEQBDYxK/BABR2kIQsS5+colWJrbE4JFxOCWIRhRYpQfin9wI6Jogm0Pb+KjK4DT9HfdMSrAtAMACrcyMzAIJ8Ewra43MUipQksuQAGB/zGQGoTjndT0mIlGG10FOwHCSxIMULgymFKIGgZSUu4asubkl93KwtnBmCYrAAgCnjp31EUwex9QUB+vuCqIAkgyyqq0RSnKLrJ0zEzqg+sMETAICXNf/AMLd1pIZhMOdGTNVziKKE4SElCJcnn/8ssMB/UBDljh+3/61nJR5KFRLgcGtbJedhhhCFAiAj/8AlB8RpOhRmfmpzBekE4XdBZxGmlJ4SmeVxMEu76dfp1+nX6dY/X/rr1wHU/8Azv379+/f379+/fv37m//ACARIkSIkSJBuP8A88EiRIkSJEjQoUKFChQG6/8A+MLAQIECBI+eQNBQimImOLOXKDESDmEhHf8AyytwP/4mrVq1av01brWt4228vJh1QNk10Z26FOhogAKf/sB//9k=" alt="CarryGo Concert Luggage Care Seoul">
-            <div class="row"><div class="label">Status / 상태</div><div class="value">CONFIRMED / 예약 확정</div></div>
+            <div class="row"><div class="label">Status / 상태</div><div class="value">${escapeHtmlFinal_(r.status || 'CONFIRMED')}</div></div>
             <div class="row"><div class="label">Reservation ID / 예약번호</div><div class="value">${escapeHtmlFinal_(r.reservation_id)}</div></div>
             <div class="row"><div class="label">Name / 이름</div><div class="value">${escapeHtmlFinal_(maskedName)}</div></div>
             <div class="row"><div class="label">Concert / 콘서트</div><div class="value">${escapeHtmlFinal_(r.concert_title)}</div></div>
@@ -1638,43 +1644,12 @@ function renderStaffLogoutPageFinal_() {
 }
 
 function handlePickupCompleteFinal_(params) {
-  const reservationId = String(params.id || '').trim();
-  const token = String(params.token || '').trim();
-  const staffSession = String(params.staff_session || '').trim();
-
-  try {
-    if (!reservationId || !token) throw new Error('Missing QR information.');
-    const staff = validateStaffSessionFinal_(staffSession);
-    if (!staff) throw new Error('Staff session expired. Please log in again.');
-
-    const rowNo = findReservationRowFinal_(reservationId);
-    const r = getReservationObjectByRowFinal_(rowNo);
-    if (String(r.checkin_token || '') !== token) throw new Error('Invalid or expired QR code.');
-    if (String(r.status || '') === 'RETURNED') throw new Error('This reservation is already returned.');
-    if (String(r.status || '') === 'CANCELLED') throw new Error('This reservation is cancelled.');
-
-    const sh = getSheetFinal_(CARRYGO_SHEETS.RESERVATIONS);
-    const now = new Date();
-    setReservationValueFinal_(sh, rowNo, 'status', 'PICKED_UP');
-    setReservationValueFinal_(sh, rowNo, 'picked_up_at', now);
-    setReservationValueFinal_(sh, rowNo, 'picked_up_by', staff.staff_id);
-
-    return renderCheckinPageFinal_({
-      mode: 'checkin',
-      id: reservationId,
-      token: token,
-      staff_session: staffSession,
-      pickup_done: '1'
-    });
-  } catch (err) {
-    return HtmlService.createHtmlOutput(`
-      <div style="font-family:Arial,sans-serif;padding:24px;max-width:520px;margin:0 auto;">
-        <h2>CarryGo Pickup Error</h2>
-        <p>픽업완료 처리 중 문제가 발생했습니다.</p>
-        <p>There was a problem completing pickup.</p>
-        <pre style="white-space:pre-wrap;background:#f5f5f5;padding:12px;border-radius:8px;">${escapeHtmlFinal_(String(err && err.message ? err.message : err))}</pre>
-      </div>`).setTitle('CarryGo Pickup Error');
-  }
+  return HtmlService.createHtmlOutput(`
+    <div style="font-family:Arial,sans-serif;padding:24px;max-width:520px;margin:0 auto;">
+      <h2>CarryGo Onsite Check-in Required</h2>
+      <p>수량 확인, 현장 추가금, 러기지택 발급 후 접수완료 처리해야 합니다.</p>
+      <p>Please use the QR check-in screen to confirm quantities, cash due, and luggage tags.</p>
+    </div>`).setTitle('CarryGo Onsite Check-in Required');
 }
 
 function findStaffByCodeFinal_(staffCode) {
@@ -1741,109 +1716,42 @@ function buildPickupCompleteUrlFinal_(reservationId, token, staffSession) {
 function buildStaffActionHtmlFinal_(reservation, token, params) {
   const staffSession = String((params && params.staff_session) || '').trim();
   const staff = validateStaffSessionFinal_(staffSession);
-  const pickupDone = String((params && params.pickup_done) || '') === '1';
+  const status = String(reservation.status || '');
+  const tags = String(reservation.luggage_tag_numbers || '').trim();
 
-  if (pickupDone || String(reservation.status || '') === 'PICKED_UP') {
-    return `<div style="margin-top:14px;padding:20px 14px;border-radius:12px;background:#eefbea;color:#156a17;font-weight:900;text-align:center;font-size:clamp(22px,4.4vw,36px);line-height:1.22;">ALREADY PICKED UP / 이미 픽업완료<br/><span style="display:inline-block;margin-top:5px;font-size:clamp(16px,3vw,24px);font-weight:800;">Staff: ${escapeHtmlFinal_(reservation.picked_up_by || (staff && staff.staff_id) || '')}</span></div>`;
+  if (status === 'PICKED_UP') {
+    return `<div style="margin-top:14px;padding:20px 14px;border-radius:12px;background:#eefbea;color:#156a17;font-weight:900;text-align:center;font-size:clamp(22px,4.4vw,36px);line-height:1.22;">PICKED UP / 접수완료<br/><span style="display:block;margin-top:10px;font-size:clamp(30px,7vw,60px);letter-spacing:-.04em;">${escapeHtmlFinal_(tags || 'TAG NOT ASSIGNED')}</span><span style="display:inline-block;margin-top:8px;font-size:clamp(14px,2.6vw,22px);font-weight:800;">Staff: ${escapeHtmlFinal_(reservation.picked_up_by || (staff && staff.staff_id) || '')}</span></div>`;
   }
 
-  return buildInlineStaffLoginHtmlFinal_(reservation.reservation_id, token);
+  return buildInlineStaffLoginHtmlFinal_(reservation, token);
 }
 
-
-// ===== CarryGo Final Inline Staff API =====
-
-function staffLoginApiFinal_(params) {
-  try {
-    const reservationId = String(params.id || '').trim();
-    const token = String(params.token || '').trim();
-    const staffCode = String(params.staff_code || '').trim();
-    if (!reservationId || !token) throw new Error('Missing QR information.');
-    if (!staffCode) throw new Error('Staff code is required.');
-
-    const rowNo = findReservationRowFinal_(reservationId);
-    const r = getReservationObjectByRowFinal_(rowNo);
-    if (String(r.checkin_token || '') !== token) throw new Error('Invalid or expired QR code.');
-
-    if (String(r.status || '') === 'PICKED_UP') {
-      return jsonFinal_({
-        ok: true,
-        already_picked_up: true,
-        status: 'PICKED_UP',
-        picked_up_by: r.picked_up_by || '',
-        picked_up_at: formatDateTimeMaybeFinal_(r.picked_up_at)
-      });
-    }
-
-    if (String(r.status || '') === 'RETURNED') throw new Error('This reservation is already returned.');
-    if (String(r.status || '') === 'CANCELLED') throw new Error('This reservation is cancelled.');
-
-    const staff = findStaffByCodeFinal_(staffCode);
-    if (!staff) throw new Error('Invalid staff code.');
-
-    // Field-speed MVP rule: valid staff code immediately completes pickup.
-    const sh = getSheetFinal_(CARRYGO_SHEETS.RESERVATIONS);
-    const now = new Date();
-    setReservationValueFinal_(sh, rowNo, 'status', 'PICKED_UP');
-    setReservationValueFinal_(sh, rowNo, 'picked_up_at', now);
-    setReservationValueFinal_(sh, rowNo, 'picked_up_by', staff.staff_id);
-
-    const sessionToken = createStaffSessionFinal_(staff);
-    return jsonFinal_({
-      ok: true,
-      staff_session: sessionToken,
-      staff_id: staff.staff_id,
-      staff_name: staff.staff_name,
-      reservation_id: reservationId,
-      status: 'PICKED_UP',
-      picked_up_by: staff.staff_id,
-      picked_up_at: formatDateTimeFinal_(now)
-    });
-  } catch (err) {
-    return jsonFinal_({ ok: false, error: String(err && err.message ? err.message : err) });
-  }
-}
-
-function pickupCompleteApiFinal_(params) {
-  try {
-    const reservationId = String(params.id || '').trim();
-    const token = String(params.token || '').trim();
-    const staffSession = String(params.staff_session || '').trim();
-    if (!reservationId || !token) throw new Error('Missing QR information.');
-
-    const staff = validateStaffSessionFinal_(staffSession);
-    if (!staff) throw new Error('Staff session expired. Please log in again.');
-
-    const rowNo = findReservationRowFinal_(reservationId);
-    const r = getReservationObjectByRowFinal_(rowNo);
-    if (String(r.checkin_token || '') !== token) throw new Error('Invalid or expired QR code.');
-    if (String(r.status || '') === 'RETURNED') throw new Error('This reservation is already returned.');
-    if (String(r.status || '') === 'CANCELLED') throw new Error('This reservation is cancelled.');
-
-    const sh = getSheetFinal_(CARRYGO_SHEETS.RESERVATIONS);
-    const now = new Date();
-    setReservationValueFinal_(sh, rowNo, 'status', 'PICKED_UP');
-    setReservationValueFinal_(sh, rowNo, 'picked_up_at', now);
-    setReservationValueFinal_(sh, rowNo, 'picked_up_by', staff.staff_id);
-
-    return jsonFinal_({ ok: true, status: 'PICKED_UP', picked_up_by: staff.staff_id, picked_up_at: formatDateTimeFinal_(now) });
-  } catch (err) {
-    return jsonFinal_({ ok: false, error: String(err && err.message ? err.message : err) });
-  }
-}
-
-function buildInlineStaffLoginHtmlFinal_(reservationId, token) {
+function buildInlineStaffLoginHtmlFinal_(reservation, token) {
   const webAppUrl = getScriptPropertyFinal_('WEB_APP_URL') || ScriptApp.getService().getUrl() || '';
   const safeBase = escapeHtmlFinal_(webAppUrl);
-  const safeId = escapeHtmlFinal_(reservationId);
+  const safeId = escapeHtmlFinal_(reservation.reservation_id);
   const safeToken = escapeHtmlFinal_(token);
+  const suitcaseCount = Math.max(1, Number(reservation.expected_suitcase_count || 1));
+  const extraCount = Math.max(0, Number(reservation.expected_extra_bag_count || 0));
 
   return `
     <div id="staffBox" style="margin-top:18px;padding:18px;border:1px solid #ddd;border-radius:14px;background:#fafafa;">
-      <div style="font-size:clamp(20px,3.8vw,30px);font-weight:900;margin-bottom:10px;">Staff Login / 스태프 로그인</div>
-      <div style="font-size:clamp(15px,2.6vw,22px);color:#555;line-height:1.4;margin-bottom:14px;">스태프 코드를 입력하면 바로 픽업완료 처리됩니다.<br/>Enter staff code to complete pickup immediately.</div>
-      <input id="staffCodeInput" placeholder="Staff code" autocomplete="off" style="box-sizing:border-box;width:100%;font-size:clamp(20px,4vw,32px);padding:16px;border:1px solid #ccc;border-radius:10px;margin:0 0 12px;">
-      <button type="button" onclick="carryGoStaffLoginFinal()" style="width:100%;font-size:clamp(17px,3.1vw,26px);font-weight:900;background:#111;color:#fff;border:0;border-radius:10px;padding:17px 10px;">Login & Pickup Complete / 로그인 및 픽업완료</button>
+      <div style="font-size:clamp(20px,3.8vw,30px);font-weight:900;margin-bottom:10px;">ONSITE CHECK-IN / 현장 접수</div>
+      <div style="font-size:clamp(15px,2.6vw,22px);color:#555;line-height:1.4;margin-bottom:14px;">실제 수량을 확인하면 추가 결제금액과 러기지택 번호가 자동 생성됩니다.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:900;color:#555;">Suitcase / 캐리어<input id="actualSuitcaseInput" type="number" min="1" value="${suitcaseCount}" oninput="carryGoUpdateDueFinal()" style="box-sizing:border-box;width:100%;font-size:clamp(20px,4vw,32px);padding:14px;border:1px solid #ccc;border-radius:10px;margin-top:6px;"></label>
+        <label style="font-size:13px;font-weight:900;color:#555;">Extra / 추가짐<input id="actualExtraInput" type="number" min="0" value="${extraCount}" oninput="carryGoUpdateDueFinal()" style="box-sizing:border-box;width:100%;font-size:clamp(20px,4vw,32px);padding:14px;border:1px solid #ccc;border-radius:10px;margin-top:6px;"></label>
+      </div>
+      <div style="padding:14px;border:2px solid #111;border-radius:12px;background:#fff;margin-bottom:12px;">
+        <div style="font-size:13px;color:#555;font-weight:900;">현장 추가 결제금액 / Onsite Cash Due</div>
+        <div id="onsiteDueBox" style="font-size:clamp(30px,6vw,54px);font-weight:950;letter-spacing:-.05em;">₩0</div>
+        <div style="font-size:12px;color:#666;line-height:1.35;">첫 번째 캐리어 예약 결제분 제외. 추가 캐리어 ₩20,000 / 추가 짐 ₩10,000.</div>
+      </div>
+      <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.35;color:#555;font-weight:800;margin-bottom:12px;"><input id="hardcopyInput" type="checkbox" style="width:auto;margin-top:2px;">하드카피 동의서 작성/서명 및 실제 수량 확인 완료</label>
+      <div id="staffLoginBox">
+        <input id="staffCodeInput" placeholder="Staff code" autocomplete="off" style="box-sizing:border-box;width:100%;font-size:clamp(20px,4vw,32px);padding:16px;border:1px solid #ccc;border-radius:10px;margin:0 0 12px;">
+      </div>
+      <button type="button" onclick="carryGoOnsiteCheckinFinal()" style="width:100%;font-size:clamp(17px,3.1vw,26px);font-weight:900;background:#111;color:#fff;border:0;border-radius:10px;padding:17px 10px;">태그 발급 & 접수완료</button>
       <div id="staffMsg" style="font-size:clamp(14px,2.5vw,20px);color:#b00020;margin-top:12px;"></div>
     </div>
     <script>
@@ -1854,8 +1762,16 @@ function buildInlineStaffLoginHtmlFinal_(reservationId, token) {
       let CARRYGO_STAFF_SESSION = '';
 
       document.addEventListener('DOMContentLoaded', function() {
+        carryGoUpdateDueFinal();
         carryGoTryStoredStaffSessionFinal();
       });
+
+      function carryGoUpdateDueFinal() {
+        const s = Math.max(1, Number(document.getElementById('actualSuitcaseInput').value || 1));
+        const e = Math.max(0, Number(document.getElementById('actualExtraInput').value || 0));
+        const due = Math.max(0, s - 1) * 20000 + e * 10000;
+        document.getElementById('onsiteDueBox').textContent = '₩' + due.toLocaleString('ko-KR');
+      }
 
       async function carryGoFetchJsonFinal(url) {
         const res = await fetch(url, { method: 'GET', cache: 'no-store' });
@@ -1868,50 +1784,43 @@ function buildInlineStaffLoginHtmlFinal_(reservationId, token) {
         const stored = localStorage.getItem(CARRYGO_LOCAL_SESSION_KEY) || '';
         if (!stored) return;
         msg.style.color = '#555';
-        msg.textContent = 'Checking staff session...';
+        msg.textContent = 'Staff session found. / 스태프 세션 확인됨';
         const url = CARRYGO_WEBAPP_URL + '?mode=staff_session_api&staff_session=' + encodeURIComponent(stored);
         try {
           const data = await carryGoFetchJsonFinal(url);
           if (!data.ok) throw new Error(data.error || 'Session expired.');
           CARRYGO_STAFF_SESSION = stored;
-          await carryGoPickupCompleteFinal(true);
+          document.getElementById('staffLoginBox').style.display = 'none';
+          msg.textContent = 'Ready. Confirm quantity, collect cash, then issue tags. / 수량·현금 확인 후 태그 발급하세요.';
         } catch (err) {
           localStorage.removeItem(CARRYGO_LOCAL_SESSION_KEY);
-          msg.style.color = '#555';
-          msg.textContent = 'Staff session expired. Please log in again. / 스태프 로그인이 만료되었습니다. 다시 로그인해 주세요.';
+          msg.textContent = 'Staff session expired. Please enter staff code.';
         }
       }
 
-      async function carryGoStaffLoginFinal() {
+      async function carryGoOnsiteCheckinFinal() {
         const msg = document.getElementById('staffMsg');
-        msg.style.color = '#555';
-        msg.textContent = 'Checking...';
-        const code = document.getElementById('staffCodeInput').value.trim();
-        const url = CARRYGO_WEBAPP_URL + '?mode=staff_login_api&id=' + encodeURIComponent(CARRYGO_RESERVATION_ID) + '&token=' + encodeURIComponent(CARRYGO_TOKEN) + '&staff_code=' + encodeURIComponent(code);
-        try {
-          const data = await carryGoFetchJsonFinal(url);
-          if (!data.ok) throw new Error(data.error || 'Login failed.');
-          if (data.staff_session) localStorage.setItem(CARRYGO_LOCAL_SESSION_KEY, data.staff_session);
-          CARRYGO_STAFF_SESSION = data.staff_session || '';
-          const label = data.already_picked_up ? 'ALREADY PICKED UP / 이미 픽업완료' : 'PICKED UP / 픽업완료';
-          const by = data.picked_up_by || data.staff_id || '';
-          document.getElementById('staffBox').innerHTML = '<div style="padding:20px 14px;border-radius:12px;background:#eefbea;color:#156a17;font-weight:900;text-align:center;font-size:clamp(22px,4.4vw,36px);line-height:1.22;">' + label + '<br/><span style="font-size:13px;font-weight:500;">Staff: ' + escapeHtmlClientFinal(by) + '</span></div>';
-        } catch (err) {
+        if (!document.getElementById('hardcopyInput').checked) {
           msg.style.color = '#b00020';
-          msg.textContent = err.message || String(err);
+          msg.textContent = '하드카피 동의서 확인 체크가 필요합니다.';
+          return;
         }
-      }
-
-      async function carryGoPickupCompleteFinal(isAuto) {
-        const msg = document.getElementById('staffMsg');
         msg.style.color = '#555';
-        msg.textContent = isAuto ? 'Staff session found. Completing pickup...' : 'Saving...';
-        const url = CARRYGO_WEBAPP_URL + '?mode=pickup_complete_api&id=' + encodeURIComponent(CARRYGO_RESERVATION_ID) + '&token=' + encodeURIComponent(CARRYGO_TOKEN) + '&staff_session=' + encodeURIComponent(CARRYGO_STAFF_SESSION);
+        msg.textContent = 'Saving...';
+        const q = new URLSearchParams({
+          mode: 'onsite_checkin_api',
+          id: CARRYGO_RESERVATION_ID,
+          token: CARRYGO_TOKEN,
+          staff_session: CARRYGO_STAFF_SESSION,
+          staff_code: document.getElementById('staffCodeInput') ? document.getElementById('staffCodeInput').value.trim() : '',
+          actual_suitcase_count: document.getElementById('actualSuitcaseInput').value,
+          actual_extra_bag_count: document.getElementById('actualExtraInput').value
+        });
         try {
-          const data = await carryGoFetchJsonFinal(url);
-          if (!data.ok) throw new Error(data.error || 'Pickup complete failed.');
-          const label = data.already_picked_up ? 'ALREADY PICKED UP / 이미 픽업완료' : 'PICKED UP / 픽업완료';
-          document.getElementById('staffBox').innerHTML = '<div style="padding:20px 14px;border-radius:12px;background:#eefbea;color:#156a17;font-weight:900;text-align:center;font-size:clamp(22px,4.4vw,36px);line-height:1.22;">' + label + '<br/><span style="font-size:13px;font-weight:500;">Staff: ' + escapeHtmlClientFinal(data.picked_up_by) + '</span></div>';
+          const data = await carryGoFetchJsonFinal(CARRYGO_WEBAPP_URL + '?' + q.toString());
+          if (!data.ok) throw new Error(data.error || 'Check-in failed.');
+          if (data.staff_session) localStorage.setItem(CARRYGO_LOCAL_SESSION_KEY, data.staff_session);
+          document.getElementById('staffBox').innerHTML = '<div style="padding:20px 14px;border-radius:12px;background:#eefbea;color:#156a17;font-weight:900;text-align:center;font-size:clamp(22px,4.4vw,36px);line-height:1.22;">PICKED UP / 접수완료<br><span style="display:block;margin-top:10px;font-size:clamp(36px,8vw,68px);letter-spacing:-.04em;">' + escapeHtmlClientFinal(data.luggage_tag_numbers) + '</span><span style="display:block;margin-top:8px;font-size:clamp(18px,3vw,28px);">추가결제 ' + escapeHtmlClientFinal(data.onsite_due_display) + '</span><span style="display:block;margin-top:6px;font-size:13px;font-weight:700;">이 번호를 러기지택 고객용/짐부착용 양쪽에 기재하세요.</span></div>';
         } catch (err) {
           msg.style.color = '#b00020';
           msg.textContent = err.message || String(err);
@@ -1926,6 +1835,30 @@ function buildInlineStaffLoginHtmlFinal_(reservationId, token) {
     </script>`;
 }
 
+// ===== CarryGo Final Inline Staff API =====
+
+function staffLoginApiFinal_(params) {
+  try {
+    const staffCode = String(params.staff_code || '').trim();
+    if (!staffCode) throw new Error('Staff code is required.');
+    const staff = findStaffByCodeFinal_(staffCode);
+    if (!staff) throw new Error('Invalid staff code.');
+    const sessionToken = createStaffSessionFinal_(staff);
+    return jsonFinal_({
+      ok: true,
+      staff_session: sessionToken,
+      staff_id: staff.staff_id,
+      staff_name: staff.staff_name
+    });
+  } catch (err) {
+    return jsonFinal_({ ok: false, error: String(err && err.message ? err.message : err) });
+  }
+}
+
+function pickupCompleteApiFinal_(params) {
+  return jsonFinal_({ ok: false, error: 'Use onsite_checkin_api to confirm counts, cash due, and luggage tags before PICKED_UP.' });
+}
+
 function formatDateTimeMaybeFinal_(value) {
   if (!value) return '';
   if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value.getTime())) {
@@ -1935,31 +1868,86 @@ function formatDateTimeMaybeFinal_(value) {
 }
 
 
-function assignLuggageTagsApiFinal_(params) {
+
+function onsiteCheckinApiFinal_(params) {
+  const lock = LockService.getScriptLock();
   try {
-    const reservationId = String(params.id || params.reservation_id || '').trim();
-    if (!reservationId) throw new Error('reservation_id is required');
-    const staffSession = String(params.staff_session || '').trim();
-    let staff = validateStaffSessionFinal_(staffSession);
-    if (!staff && params.staff_code) staff = findStaffByCodeFinal_(params.staff_code);
-    if (!staff) throw new Error('Invalid staff session or staff code');
+    lock.waitLock(10000);
+    const reservationId = String(params.id || '').trim();
+    const token = String(params.token || '').trim();
+    if (!reservationId || !token) throw new Error('Missing QR information.');
+
+    let staff = validateStaffSessionFinal_(String(params.staff_session || '').trim());
+    let sessionToken = String(params.staff_session || '').trim();
+    if (!staff && params.staff_code) {
+      staff = findStaffByCodeFinal_(params.staff_code);
+      if (staff) sessionToken = createStaffSessionFinal_(staff);
+    }
+    if (!staff) throw new Error('Staff login is required.');
 
     const rowNo = findReservationRowFinal_(reservationId);
-    const row = getReservationObjectByRowFinal_(rowNo);
-    const existing = String(row.luggage_tag_numbers || '').trim();
-    if (existing && String(params.force || '').toUpperCase() !== 'TRUE') {
-      return jsonFinal_({ ok: true, already_assigned: true, reservation_id: reservationId, luggage_tag_numbers: existing });
+    const r = getReservationObjectByRowFinal_(rowNo);
+    if (String(r.checkin_token || '') !== token) throw new Error('Invalid or expired QR code.');
+    if (String(r.status || '') === 'RETURNED') throw new Error('This reservation is already returned.');
+    if (String(r.status || '') === 'CANCELLED') throw new Error('This reservation is cancelled.');
+    if (String(r.status || '') === 'PICKED_UP') {
+      return jsonFinal_({
+        ok: true,
+        already_assigned: true,
+        reservation_id: reservationId,
+        status: 'PICKED_UP',
+        luggage_tag_numbers: String(r.luggage_tag_numbers || '').trim(),
+        actual_suitcase_count: r.actual_suitcase_count || r.expected_suitcase_count || '',
+        actual_extra_bag_count: r.actual_extra_bag_count || r.expected_extra_bag_count || '',
+        onsite_due_amount: r.onsite_due_amount || 0,
+        onsite_due_display: '₩' + Number(r.onsite_due_amount || 0).toLocaleString('ko-KR'),
+        picked_up_by: r.picked_up_by || '',
+        picked_up_at: formatDateTimeMaybeFinal_(r.picked_up_at)
+      });
+    }
+    if (String(r.status || '') !== 'CONFIRMED' || String(r.payment_status || '') !== 'PAID') {
+      throw new Error('Reservation is not confirmed/paid yet.');
     }
 
-    const count = Math.max(1, Number(row.expected_suitcase_count || 0) + Number(row.expected_extra_bag_count || 0));
-    const tags = nextLuggageTagNumbersFinal_(count);
+    const actualSuitcase = normalizeCountFinal_(params.actual_suitcase_count || r.expected_suitcase_count, 1);
+    const actualExtra = normalizeCountFinal_(params.actual_extra_bag_count || r.expected_extra_bag_count, 0);
+    if (actualSuitcase < 1) throw new Error('actual_suitcase_count must be at least 1');
+    const onsiteDue = Math.max(0, actualSuitcase - 1) * 20000 + actualExtra * 10000;
+    const existingTags = String(r.luggage_tag_numbers || '').trim();
+    const tags = existingTags || nextLuggageTagNumbersFinal_(actualSuitcase + actualExtra, r.concert_id);
+
     const sh = getSheetFinal_(CARRYGO_SHEETS.RESERVATIONS);
+    const now = new Date();
+    setReservationValueFinal_(sh, rowNo, 'expected_suitcase_count', actualSuitcase);
+    setReservationValueFinal_(sh, rowNo, 'expected_extra_bag_count', actualExtra);
+    setReservationValueFinal_(sh, rowNo, 'actual_suitcase_count', actualSuitcase);
+    setReservationValueFinal_(sh, rowNo, 'actual_extra_bag_count', actualExtra);
+    setReservationValueFinal_(sh, rowNo, 'onsite_due_amount', onsiteDue);
     setReservationValueFinal_(sh, rowNo, 'luggage_tag_numbers', tags);
     setReservationValueFinal_(sh, rowNo, 'onsite_staff', staff.staff_id || staff.staff_name || '');
-    setReservationValueFinal_(sh, rowNo, 'onsite_consent_flags', mergeNoteFinal_(row.onsite_consent_flags || '', 'HARDCOPY_CONFIRMED=YES; TAG_ASSIGNED_BY=' + (staff.staff_id || staff.staff_name || 'STAFF')));
-    return jsonFinal_({ ok: true, reservation_id: reservationId, luggage_tag_numbers: tags, count: count, staff_id: staff.staff_id || '' });
+    setReservationValueFinal_(sh, rowNo, 'onsite_consent_flags', mergeNoteFinal_(r.onsite_consent_flags || '', 'HARDCOPY_CONFIRMED=YES; ONSITE_CHECKIN_BY=' + (staff.staff_id || staff.staff_name || 'STAFF')));
+    setReservationValueFinal_(sh, rowNo, 'status', 'PICKED_UP');
+    setReservationValueFinal_(sh, rowNo, 'picked_up_at', now);
+    setReservationValueFinal_(sh, rowNo, 'picked_up_by', staff.staff_id || staff.staff_name || 'STAFF');
+
+    return jsonFinal_({
+      ok: true,
+      staff_session: sessionToken,
+      reservation_id: reservationId,
+      status: 'PICKED_UP',
+      already_assigned: !!existingTags,
+      luggage_tag_numbers: tags,
+      actual_suitcase_count: actualSuitcase,
+      actual_extra_bag_count: actualExtra,
+      onsite_due_amount: onsiteDue,
+      onsite_due_display: '₩' + Number(onsiteDue || 0).toLocaleString('ko-KR'),
+      picked_up_by: staff.staff_id || staff.staff_name || 'STAFF',
+      picked_up_at: formatDateTimeFinal_(now)
+    });
   } catch (err) {
     return jsonFinal_({ ok: false, error: String(err && err.message ? err.message : err) });
+  } finally {
+    try { lock.releaseLock(); } catch (e) {}
   }
 }
 
@@ -2112,6 +2100,8 @@ function adminListUnpaidApiFinal_(params) {
         concert_date: row.concert_date,
         concert_time: row.concert_time,
         pickup_time: row.pickup_time,
+        booking_channel: row.booking_channel,
+        luggage_tag_numbers: row.luggage_tag_numbers,
         expected_suitcase_count: row.expected_suitcase_count,
         expected_extra_bag_count: row.expected_extra_bag_count,
         payment_method: row.payment_method,
@@ -2174,6 +2164,8 @@ function adminListUnpaidClientFinal(adminPin) {
         concert_date: row.concert_date,
         concert_time: row.concert_time,
         pickup_time: row.pickup_time,
+        booking_channel: row.booking_channel,
+        luggage_tag_numbers: row.luggage_tag_numbers,
         expected_suitcase_count: row.expected_suitcase_count,
         expected_extra_bag_count: row.expected_extra_bag_count,
         payment_method: row.payment_method,
@@ -2524,6 +2516,9 @@ function adminReservationSummaryFinal_(row) {
     pickup_time: row.pickup_time,
     booking_channel: row.booking_channel,
     luggage_tag_numbers: row.luggage_tag_numbers,
+    onsite_due_amount: row.onsite_due_amount,
+    actual_suitcase_count: row.actual_suitcase_count,
+    actual_extra_bag_count: row.actual_extra_bag_count,
     expected_suitcase_count: row.expected_suitcase_count,
     expected_extra_bag_count: row.expected_extra_bag_count,
     payment_method: row.payment_method,
