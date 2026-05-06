@@ -323,6 +323,10 @@ function doGet(e) {
       return adminNormalizeLuggageTagsApiFinal_(params);
     }
 
+    if (mode === 'admin_reset_checkin_tests') {
+      return adminResetCheckinTestsApiFinal_(params);
+    }
+
 
     if (mode === 'staff_session_api') {
       return staffSessionApiFinal_(params);
@@ -1963,6 +1967,56 @@ function formatDateTimeMaybeFinal_(value) {
   return String(value);
 }
 
+
+
+function adminResetCheckinTestsApiFinal_(params) {
+  try {
+    validateAdminPinFinal_(params.admin_pin);
+    const sh = getSheetFinal_(CARRYGO_SHEETS.RESERVATIONS);
+    const values = sh.getDataRange().getValues();
+    const changed = [];
+    const clearHeaders = [
+      'picked_up_at',
+      'picked_up_by',
+      'luggage_tag_numbers',
+      'onsite_payment_method',
+      'onsite_staff',
+      'onsite_consent_flags',
+      'actual_suitcase_count',
+      'actual_extra_bag_count',
+      'onsite_due_amount',
+      'onsite_cash_received',
+      'onsite_tag_attached',
+      'onsite_photo_taken',
+      'onsite_checkin_completed_at'
+    ];
+    const col = name => RESERVATIONS_HEADERS.indexOf(name);
+    const statusCol = col('status');
+    const paymentStatusCol = col('payment_status');
+    const bookingChannelCol = col('booking_channel');
+    const ridCol = col('reservation_id');
+    const tagCol = col('luggage_tag_numbers');
+    for (let i = 1; i < values.length; i++) {
+      const row = values[i];
+      const hadTags = String(row[tagCol] || '').trim();
+      const wasPickedUp = String(row[statusCol] || '').trim() === 'PICKED_UP';
+      const isPaid = String(row[paymentStatusCol] || '').trim() === 'PAID';
+      const isWalkIn = String(row[bookingChannelCol] || '').trim() === 'WALK_IN';
+      if (!hadTags && !wasPickedUp) continue;
+      clearHeaders.forEach(header => {
+        const c = col(header);
+        if (c >= 0) sh.getRange(i + 1, c + 1).setValue('');
+      });
+      if (wasPickedUp && isPaid && !isWalkIn) {
+        sh.getRange(i + 1, statusCol + 1).setValue('CONFIRMED');
+      }
+      changed.push({ row: i + 1, reservation_id: row[ridCol], previous_status: row[statusCol], previous_tags: hadTags });
+    }
+    return jsonFinal_({ ok: true, changed_count: changed.length, changed: changed });
+  } catch (err) {
+    return jsonFinal_({ ok: false, error: String(err && err.message ? err.message : err) });
+  }
+}
 
 
 function adminNormalizeLuggageTagsApiFinal_(params) {
