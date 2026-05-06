@@ -515,7 +515,10 @@ function createReservationFinal(body) {
       concert_title: rowObject.concert_title,
       concert_date: rowObject.concert_date,
       concert_time: rowObject.concert_time,
+      pickup_time: rowObject.pickup_time,
       venue: rowObject.venue,
+      expected_suitcase_count: rowObject.expected_suitcase_count,
+      expected_extra_bag_count: rowObject.expected_extra_bag_count,
       payment_instructions: buildPaymentInstructionsFinal_(payment.method, reservationId)
     };
   } finally {
@@ -1908,6 +1911,9 @@ function adminListUnpaidApiFinal_(params) {
         customer_email: row.customer_email,
         concert_date: row.concert_date,
         concert_time: row.concert_time,
+        pickup_time: row.pickup_time,
+        expected_suitcase_count: row.expected_suitcase_count,
+        expected_extra_bag_count: row.expected_extra_bag_count,
         payment_method: row.payment_method,
         amount_display: String(row.currency || '').toUpperCase() === 'USD' ? '$' + row.base_fee : '₩' + Number(row.base_fee || 0).toLocaleString('ko-KR'),
         payment_due_at: formatDateTimeMaybeFinal_(row.payment_due_at)
@@ -1967,6 +1973,9 @@ function adminListUnpaidClientFinal(adminPin) {
         customer_email: row.customer_email,
         concert_date: row.concert_date,
         concert_time: row.concert_time,
+        pickup_time: row.pickup_time,
+        expected_suitcase_count: row.expected_suitcase_count,
+        expected_extra_bag_count: row.expected_extra_bag_count,
         payment_method: row.payment_method,
         amount_display: String(row.currency || '').toUpperCase() === 'USD' ? '$' + row.base_fee : '₩' + Number(row.base_fee || 0).toLocaleString('ko-KR'),
         payment_due_at: formatDateTimeMaybeFinal_(row.payment_due_at)
@@ -2306,6 +2315,9 @@ function adminReservationSummaryFinal_(row) {
     concert_title: row.concert_title,
     concert_date: row.concert_date,
     concert_time: row.concert_time,
+    pickup_time: row.pickup_time,
+    expected_suitcase_count: row.expected_suitcase_count,
+    expected_extra_bag_count: row.expected_extra_bag_count,
     payment_method: row.payment_method,
     amount_display: String(row.currency || '').toUpperCase() === 'USD' ? '$' + row.base_fee : '₩' + Number(row.base_fee || 0).toLocaleString('ko-KR'),
     payment_due_at: formatDateTimeMaybeFinal_(row.payment_due_at),
