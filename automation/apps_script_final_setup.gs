@@ -39,7 +39,8 @@ const CONCERT_DATES_HEADERS = [
   'is_active',
   'sort_order',
   'created_at',
-  'updated_at'
+  'updated_at',
+  'pickup_time_options'
 ];
 
 const RESERVATIONS_HEADERS = [
@@ -57,7 +58,6 @@ const RESERVATIONS_HEADERS = [
   'concert_title',
   'concert_date',
   'concert_time',
-  'pickup_time',
   'venue',
   'customer_country',
   'country_code',
@@ -84,7 +84,8 @@ const RESERVATIONS_HEADERS = [
   'qr_file_url',
   'picked_up_by',
   'agreement_version',
-  'note'
+  'note',
+  'pickup_time'
 ];
 
 const STAFF_HEADERS = [
@@ -240,7 +241,7 @@ function applySheetFormatsFinal_(sh, sheetName, headers) {
   ]);
 
   if (sheetName === CARRYGO_SHEETS.CONCERT_DATES || sheetName === CARRYGO_SHEETS.RESERVATIONS) {
-    formatColumnsAsText_(sh, headers, ['concert_date', 'concert_time', 'pickup_time']);
+    formatColumnsAsText_(sh, headers, ['concert_date', 'concert_time', 'pickup_time', 'pickup_time_options']);
   }
 }
 
@@ -427,6 +428,7 @@ function getActiveConcertDatesFinal(concertId) {
       concert_id: row.concert_id,
       concert_date: row.concert_date,
       concert_time: row.concert_time,
+      pickup_time_options: normalizePickupTimeOptionsFinal_(row.pickup_time_options).join(','),
       pickup_drop_guide_link: row.pickup_drop_guide_link,
       next_day_pickup_guide_link: row.next_day_pickup_guide_link,
       location_change_guide_link: row.location_change_guide_link,
@@ -465,7 +467,7 @@ function createReservationFinal(body) {
       concert_title: concert.concert_title,
       concert_date: concertDate.concert_date,
       concert_time: concertDate.concert_time,
-      pickup_time: requiredPickupTimeFinal_(body.pickup_time),
+      pickup_time: requiredPickupTimeFinal_(body.pickup_time, concertDate.pickup_time_options),
       venue: concert.venue,
       customer_country: requiredStringFinal_(body.customer_country, 'customer_country'),
       country_code: countryCode,
@@ -629,13 +631,27 @@ function validateReservationFinal_(row) {
   if (!row.pickup_time) throw new Error('pickup_time is required');
 }
 
-function requiredPickupTimeFinal_(value) {
+function requiredPickupTimeFinal_(value, optionSource) {
   const normalized = String(value || '').trim();
-  const allowed = ['10:00', '12:00', '14:00'];
+  const allowed = normalizePickupTimeOptionsFinal_(optionSource);
   if (!allowed.includes(normalized)) {
     throw new Error('pickup_time must be one of: ' + allowed.join(', '));
   }
   return normalized;
+}
+
+function normalizePickupTimeOptionsFinal_(value) {
+  const raw = String(value || '').trim();
+  const parts = raw ? raw.split(/[\n,]+/).map(v => v.trim()).filter(Boolean) : ['10:00', '12:00', '14:00'];
+  const valid = [];
+  parts.forEach(item => {
+    const m = item.match(/^([0-2]?\d):([0-5]\d)$/);
+    if (!m) return;
+    const hh = String(Number(m[1])).padStart(2, '0');
+    const time = hh + ':' + m[2];
+    if (!valid.includes(time)) valid.push(time);
+  });
+  return valid.length ? valid : ['10:00', '12:00', '14:00'];
 }
 
 function readSheetObjectsFinal_(sheetName, headers) {
@@ -2187,6 +2203,7 @@ function adminCreateConcertDateApiFinal_(params) {
       concert_id: concertId,
       concert_date: concertDate,
       concert_time: concertTime,
+      pickup_time_options: normalizePickupTimeOptionsFinal_(params.pickup_time_options).join(','),
       pickup_drop_guide_link: String(params.pickup_drop_guide_link || '').trim(),
       next_day_pickup_guide_link: String(params.next_day_pickup_guide_link || '').trim(),
       location_change_guide_link: String(params.location_change_guide_link || '').trim(),
@@ -2242,6 +2259,7 @@ function adminCreateConcertBundleApiFinal_(params) {
         concert_id: concertId,
         concert_date: item.date,
         concert_time: item.time,
+        pickup_time_options: normalizePickupTimeOptionsFinal_(params.pickup_time_options).join(','),
         pickup_drop_guide_link: String(params.pickup_drop_guide_link || '').trim(),
         next_day_pickup_guide_link: String(params.next_day_pickup_guide_link || '').trim(),
         location_change_guide_link: String(params.location_change_guide_link || '').trim(),
@@ -2496,6 +2514,7 @@ function adminUpdateConcertDateApiFinal_(params) {
       if (String(values[i][idCol]) === concertDateId) {
         updateCellIfParamFinal_(sh, i + 1, CONCERT_DATES_HEADERS, 'concert_date', params.concert_date, true);
         updateCellIfParamFinal_(sh, i + 1, CONCERT_DATES_HEADERS, 'concert_time', params.concert_time, true);
+        if (params.pickup_time_options !== undefined) updateCellIfParamFinal_(sh, i + 1, CONCERT_DATES_HEADERS, 'pickup_time_options', normalizePickupTimeOptionsFinal_(params.pickup_time_options).join(','), false);
         updateCellIfParamFinal_(sh, i + 1, CONCERT_DATES_HEADERS, 'pickup_drop_guide_link', params.pickup_drop_guide_link, true);
         updateCellIfParamFinal_(sh, i + 1, CONCERT_DATES_HEADERS, 'next_day_pickup_guide_link', params.next_day_pickup_guide_link, true);
         updateCellIfParamFinal_(sh, i + 1, CONCERT_DATES_HEADERS, 'location_change_guide_link', params.location_change_guide_link, true);
