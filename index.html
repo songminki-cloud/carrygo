@@ -33,7 +33,7 @@
     </section>
 
     <section class="section" aria-label="available concerts">
-      <div class="section-title"><h2>Available Concert</h2></div>
+      <div class="section-title"><h2>Available Concerts</h2></div>
       <div class="concert-list" id="concertCards">
         <section class="ticket-card paper">
           <div class="ticket-head"><div><div class="ticket-title">SHINee WORLD VII</div></div><span class="status-pill"><span class="status-dot"></span>OPEN</span></div>
@@ -74,8 +74,7 @@
     <section class="section desktop-span">
       <div class="section-title"><h2>Before You Book</h2><span>예약 전 꼭 확인하세요</span></div>
       <div class="checklist">
-        <div class="check-item"><span class="check-mark">!</span><span><b>예약 시 결제는 첫 번째 캐리어 요금</b>입니다. 캐리어 2개 이상은 현장에서 개당 ₩20,000 추가 결제합니다.</span></div>
-        <div class="check-item"><span class="check-mark">!</span><span><b>추가 캐리어는 개당 ₩20,000</b>입니다. 크기와 상관없이 캐리어는 모두 같은 요금입니다.</span></div>
+        <div class="check-item"><span class="check-mark">!</span><span><b>예약 시 결제는 첫 번째 캐리어 요금</b>입니다. 캐리어는 크기와 상관없이 개당 ₩20,000이며, 2개 이상은 현장에서 추가 결제합니다.</span></div>
         <div class="check-item"><span class="check-mark">!</span><span><b>캐리어 외 추가 짐은 개당 ₩10,000</b>입니다. 쇼핑백·백팩 등은 현장에서 수량 확인 후 현금 결제합니다.</span></div>
         <div class="check-item"><span class="check-mark">!</span><span><b>현장 결제는 KRW 현금 기준</b>입니다. 한화가 없을 경우 현장에 한해 USD 현금 결제가 가능합니다. (₩10,000 = $10 / ₩20,000 = $20)</span></div>
         <div class="check-item"><span class="check-mark">!</span><span><b>공연 종료 후 2시간 이내 수령</b>해야 합니다. 공연 당일 찾지 못한 경우 익일 수령 요금이 추가됩니다.</span></div>
@@ -83,12 +82,12 @@
     </section>
 
     <section class="section desktop-span" id="reserve">
-      <div class="section-title"><h2>Book Luggage</h2><span>짐 보관 신청</span></div>
+      <div class="section-title"><h2>Reserve Luggage</h2><span>짐 보관 신청</span></div>
       <form class="form-card" id="carrygoForm">
         <div class="field"><label for="concertSelect">공연 / Concert</label><select name="concert_id" id="concertSelect" required><option value="shinee_world_vii">SHINee WORLD VII</option></select><div class="help">현재 신청 가능한 공연만 표시됩니다.</div></div>
         <div class="field"><label for="dateSelect">공연일 / Date</label><select name="concert_date_id" id="dateSelect" required><option value="shinee_20260530">2026-05-30 19:00</option><option value="shinee_20260531">2026-05-31 18:00</option><option value="shinee_20260601">2026-06-01 17:00</option></select><div class="help">공연 날짜와 시작 시간을 꼭 확인해 주세요.</div></div>
         <div class="field"><label for="customerName">영문 이름 / Name</label><input type="text" name="customer_name" id="customerName" required placeholder="MINJI KIM"></div>
-        <div class="field"><label for="customerEmail">이메일 / Email</label><input name="customer_email" id="customerEmail" type="email" required placeholder="you@example.com"><div class="help">결제 안내, 예약 확정메일, QR, 장소 안내가 모두 이 이메일로 발송됩니다. 오타가 있으면 예약 진행이 어렵습니다.</div><div class="email-suggest" id="emailSuggest"></div></div>
+        <div class="field"><label for="customerEmail">이메일 / Email</label><input name="customer_email" id="customerEmail" type="email" required placeholder="you@example.com"><div class="help">중요 · 결제 안내, 예약 확정메일, QR, 장소 안내가 모두 이 이메일로 발송됩니다. 오타가 있으면 예약 진행이 어렵습니다.</div><div class="email-suggest" id="emailSuggest"></div></div>
         <div class="field"><label for="countrySelect">국가 / Country</label><select name="customer_country" id="countrySelect" required><option value="Korea" data-code="+82">Korea</option><option value="Japan" data-code="+81">Japan</option><option value="USA" data-code="+1">USA</option><option value="China" data-code="+86">China</option><option value="Hong Kong" data-code="+852">Hong Kong</option><option value="Taiwan" data-code="+886">Taiwan</option><option value="Singapore" data-code="+65">Singapore</option><option value="Thailand" data-code="+66">Thailand</option><option value="Other" data-code="+">Other</option></select></div>
         <div class="phone-row full">
           <div class="field"><label for="countryCode">국가번호</label><input type="text" name="country_code" id="countryCode" required value="+82" placeholder="+82"></div>
@@ -96,9 +95,9 @@
         </div>
         <div class="field"><label for="suitcaseCount">캐리어 수량</label><select name="expected_suitcase_count" id="suitcaseCount" required><option value="1">1개 · 예약 시 결제</option><option value="2">2개 · 추가 1개 현장 결제</option><option value="3">3개 · 추가 2개 현장 결제</option></select><div class="help">예약 시 결제는 첫 번째 캐리어 요금입니다. 2개 이상은 현장에서 개당 ₩20,000 추가 결제합니다.</div></div>
         <div class="field"><label for="extraBagCount">캐리어 외 추가 짐</label><select name="expected_extra_bag_count" id="extraBagCount" required><option value="0">0개</option><option value="1">1개</option><option value="2">2개</option><option value="3">3개</option></select><div class="help">쇼핑백/백팩 등은 캐리어와 별도입니다. 현장에서 개당 ₩10,000 현금 결제합니다.</div></div>
-        <div class="field"><label for="paymentMethod">예약 결제수단 / Payment</label><select name="payment_method" id="paymentMethod" required><option value="KAKAOPAY">KakaoPay · 첫 번째 캐리어 ₩20,000</option><option value="PAYPAL">PayPal · 첫 번째 캐리어 $15</option><option value="BANK">Bank transfer · 첫 번째 캐리어</option></select></div>
+        <div class="field"><label for="paymentMethod">예약 결제수단 / Payment</label><select name="payment_method" id="paymentMethod" required><option value="KAKAOPAY">KakaoPay · 첫 번째 캐리어 ₩20,000</option><option value="PAYPAL">PayPal · 첫 번째 캐리어 $15</option><option value="BANK">Bank transfer · 첫 번째 캐리어</option></select><div class="help">예약 결제수단은 첫 번째 캐리어 요금에만 적용됩니다. 추가 비용은 현장에서 확인 후 현금 결제합니다.</div></div>
         <div class="field full"><label for="note">요청사항 / Note</label><textarea name="note" id="note" placeholder="선택 입력 · 짐 특징이나 현장 문의사항을 적어주세요."></textarea></div>
-        <label class="agree"><input type="checkbox" required><span>예약 시 결제는 첫 번째 캐리어 요금이며, 추가 캐리어/캐리어 외 추가 짐/익일 수령은 현장 확인 및 현금 결제 대상임을 확인했습니다.</span></label>
+        <label class="agree"><input type="checkbox" required><span>예약 결제는 첫 번째 캐리어 요금이며, 추가 비용은 현장 결제임을 확인했습니다.</span></label>
         <label class="agree"><input type="checkbox" required><span>결제 후 고객 변심 취소 및 노쇼는 환불되지 않음을 확인했습니다.</span></label>
         <div class="submit-wrap"><button class="btn primary full" type="submit">신청하기</button></div>
         <div class="result" id="resultBox"></div>
