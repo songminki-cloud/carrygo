@@ -1056,7 +1056,7 @@ function testCreateReservationPayPalFinal() {
 function sendPaymentInstructionEmailFinal_(reservation) {
   if (!reservation || !reservation.customer_email) throw new Error('customer_email is required for email');
 
-  const subject = '[CarryGo] ' + formatAmountDisplayFinal_(reservation) + ' 결제 필요 / Payment Required';
+  const subject = '[CarryGo] 신청이 접수되었습니다 / Payment Required';
   const body = buildPaymentInstructionEmailBodyFinal_(reservation);
   const htmlBody = buildPaymentInstructionEmailHtmlFinal_(reservation);
 
