@@ -1098,7 +1098,7 @@ function buildPaymentInstructionEmailBodyFinal_(r) {
     '- 장소: ' + r.venue,
     '- 짐 맡기는 시간: ' + formatKoreanTimeFinal_(r.pickup_time || '') + ' (30분 전부터 접수, 정시 마감)',
     '',
-    '포함 사항: 첫 번째 캐리어 1개 보관 / 선택 시간 짐 맡기기 / 공연 종료 후 2시간 이내 수령',
+    '포함 사항: 기본요금 20,000원(캐리어 1개 보관) / 선택 시간 짐 맡기기 / 공연 종료 후 2시간 이내 수령',
     '',
     '신청 후 6시간 이내 결제가 확인되지 않으면 신청이 취소될 수 있습니다.',
     '현장 추가 결제: 추가 캐리어 1개당 ₩20,000, 캐리어 외 추가 짐(쇼핑백·백팩 등) 1개당 ₩10,000. 한화가 없으면 캐리어 외 추가 짐은 $10.',
@@ -1170,7 +1170,7 @@ function buildPaymentInstructionEmailHtmlFinal_(r) {
     '짐 맡기는 시간: ' + escapeHtmlFinal_(formatKoreanTimeFinal_(r.pickup_time || '')) + ' <span style="color:#777;">(30분 전부터 접수, 정시 마감)</span>',
     '</div>',
     '</div>',
-    '<div style="margin-top:15px;font-size:12px;line-height:1.55;color:#666;font-weight:650;">포함 사항: 첫 번째 캐리어 1개 보관 / 선택 시간 짐 맡기기 / 공연 종료 후 2시간 이내 수령<br>현장 추가 결제: 추가 캐리어 1개당 20,000원, 캐리어 외 추가 짐(쇼핑백·백팩 등) 1개당 10,000원. 한화가 없으면 캐리어 외 추가 짐은 $10.</div>',
+    '<div style="margin-top:15px;font-size:12px;line-height:1.55;color:#666;font-weight:650;">포함 사항: 기본요금 20,000원(캐리어 1개 보관) / 선택 시간 짐 맡기기 / 공연 종료 후 2시간 이내 수령<br>현장 추가 결제: 추가 캐리어 1개당 20,000원, 캐리어 외 추가 짐(쇼핑백·백팩 등) 1개당 10,000원. 한화가 없으면 캐리어 외 추가 짐은 $10.</div>',
     '</div>',
     '<div style="font-size:12px;color:#777;line-height:1.5;margin-top:14px;text-align:center;">CarryGo</div>',
     '</div>',
@@ -1353,11 +1353,8 @@ function buildReservationConfirmedEmailBodyFinal_(r) {
     '짐 맡기기/찾기 안내:',
     getConcertDateLinkFinal_(r.concert_date_id, 'pickup_drop_guide_link'),
     '',
-    '익일 수령 안내:',
-    getConcertDateLinkFinal_(r.concert_date_id, 'next_day_pickup_guide_link'),
-    '',
     '기본 이용료 포함 사항:',
-    '- 첫 번째 캐리어 1개 보관',
+    '- 기본요금 20,000원에는 캐리어 1개 보관이 포함됩니다.',
     '- 선택한 시간에 짐 맡기기',
     '- 공연 종료 후 2시간 이내 수령',
     '- 캐리어 크기와 상관없이 1개 기준',
@@ -1377,11 +1374,9 @@ function buildReservationConfirmedEmailBodyFinal_(r) {
     '- 공연 종료 후 2시간 이내에 짐을 수령해 주세요.',
     '- 고객용 러기지택 번호와 짐 부착용 태그 번호를 확인한 후 짐을 드립니다.',
     '',
-    '익일 수령 / Next-day Pickup:',
-    '공연 종료 후 2시간 이내 수령하지 못한 짐은 익일 수령으로 전환됩니다.',
-    '- 수령 시간: 다음날 10:00–12:00',
-    '- 수령 장소: 익일 수령 안내 링크를 확인해 주세요.',
-    '- 추가 보관료: ₩20,000 / $15, 예약 1건당 1회',
+    '당일 미수령 안내:',
+    '공연 종료 후 2시간 이내 수령이 원칙입니다.',
+    '- 시간 내 수령하지 못한 경우 추가 보관 및 운영 비용으로 예약 1건당 30,000원이 부과됩니다.',
     '',
     '취소 및 환불:',
     '- 결제 후 고객 변심 취소 및 노쇼는 환불되지 않습니다.',
@@ -1410,11 +1405,8 @@ function buildReservationConfirmedEmailBodyFinal_(r) {
     'Luggage Drop-off/Pickup Guide:',
     getConcertDateLinkFinal_(r.concert_date_id, 'pickup_drop_guide_link'),
     '',
-    'Next-day Pickup Guide:',
-    getConcertDateLinkFinal_(r.concert_date_id, 'next_day_pickup_guide_link'),
-    '',
     'Base Fee includes:',
-    '- Storage for the first suitcase',
+    '- Base fee includes storage for 1 suitcase',
     '- Luggage drop-off at your selected time',
     '- Pickup within 2 hours after the concert ends',
     '- One suitcase regardless of size',
@@ -1434,11 +1426,9 @@ function buildReservationConfirmedEmailBodyFinal_(r) {
     '- Please pick up your luggage within 2 hours after the concert ends.',
     '- We will match your customer Luggage Tag number with the luggage tag before returning your luggage.',
     '',
-    'Next-day Pickup:',
-    'If your luggage is not picked up within 2 hours after the concert, it will be transferred to next-day pickup.',
-    '- Pickup time: 10:00–12:00 the next day',
-    '- Location: Please check the Next-day Pickup Guide link.',
-    '- Additional storage fee: ₩20,000 / $15, charged once per reservation',
+    'Late pickup:',
+    'Please pick up your luggage within 2 hours after the concert ends.',
+    '- If luggage is not picked up within this time, an additional late pickup/storage fee of KRW 30,000 per booking will apply.',
     '',
     'Cancellation & Refund:',
     '- Customer cancellations and no-shows are non-refundable after payment.',
@@ -1510,7 +1500,6 @@ function testConfirmLatestReservationFinal() {
 
 function buildReservationConfirmedEmailHtmlFinal_(r) {
   const pickupLink = escapeHtmlFinal_(getConcertDateLinkFinal_(r.concert_date_id, 'pickup_drop_guide_link'));
-  const nextDayLink = escapeHtmlFinal_(getConcertDateLinkFinal_(r.concert_date_id, 'next_day_pickup_guide_link'));
   const qrUrl = escapeHtmlFinal_(r.qr_checkin_url || '');
 
   return `
@@ -1541,15 +1530,14 @@ function buildReservationConfirmedEmailHtmlFinal_(r) {
     <h3 style="margin-top:24px;">Luggage Drop-off/Pickup Guide / 짐 맡기기·찾기 안내</h3>
     <p><a href="${pickupLink}" style="color:#111;word-break:break-all;">${pickupLink}</a></p>
 
-    <h3 style="margin-top:24px;">Next-day Pickup Guide / 익일 수령 안내</h3>
-    <p><a href="${nextDayLink}" style="color:#111;word-break:break-all;">${nextDayLink}</a></p>
-
     <h3 style="margin-top:24px;">Important / 중요 안내</h3>
     <ul style="padding-left:20px;">
-      <li>Base Fee includes storage for the first suitcase, drop-off at the selected time, and pickup within 2 hours after the concert ends.</li>
-      <li>기본 이용료에는 첫 번째 캐리어 1개 보관, 선택 시간 짐 맡기기, 공연 종료 후 2시간 이내 수령이 포함됩니다.</li>
+      <li>Base fee includes storage for 1 suitcase, drop-off at the selected time, and pickup within 2 hours after the concert ends.</li>
+      <li>기본요금 20,000원에는 캐리어 1개 보관, 선택 시간 짐 맡기기, 공연 종료 후 2시간 이내 수령이 포함됩니다.</li>
       <li>Additional suitcase: ₩20,000 each. Non-suitcase extra items such as shopping bags/backpacks: ₩10,000 each. If you do not have KRW, $10 cash per non-suitcase item is accepted. No exchange-rate calculation onsite.</li>
       <li>추가 캐리어: 1개당 ₩20,000. 캐리어 외 추가 짐(쇼핑백·백팩 등): 1개당 ₩10,000. 한화가 없으면 캐리어 외 추가 짐은 $10 현금 가능. 현장 환율 계산 없음.</li>
+      <li>Late pickup: If luggage is not picked up within 2 hours after the concert ends, an additional late pickup/storage fee of KRW 30,000 per booking will apply.</li>
+      <li>당일 미수령: 공연 종료 후 2시간 이내 수령하지 못한 경우 추가 보관 및 운영 비용으로 예약 1건당 30,000원이 부과됩니다.</li>
       <li>Customer cancellations and no-shows are non-refundable after payment.</li>
       <li>결제 후 고객 변심 취소 및 노쇼는 환불되지 않습니다.</li>
     </ul>
@@ -1569,8 +1557,7 @@ function renderCheckinPageFinal_(params) {
     if (String(r.checkin_token || '') !== token) throw new Error('Invalid or expired QR code.');
 
     const pickupLink = escapeHtmlFinal_(getConcertDateLinkFinal_(r.concert_date_id, 'pickup_drop_guide_link'));
-    const nextDayLink = escapeHtmlFinal_(getConcertDateLinkFinal_(r.concert_date_id, 'next_day_pickup_guide_link'));
-    const maskedName = maskNameFinal_(r.customer_name);
+      const maskedName = maskNameFinal_(r.customer_name);
 
     const html = `
       <!doctype html>
@@ -1615,8 +1602,6 @@ function renderCheckinPageFinal_(params) {
             <div class="row"><div class="label">Drop-off Time / 짐 맡기는 시간</div><div class="value">${escapeHtmlFinal_(formatKoreanTimeFinal_(r.pickup_time || ''))}</div><div class="subnote">${escapeHtmlFinal_(formatPickupWindowFinal_(r.pickup_time || ''))}</div></div>
 
             <a class="button" target="_top" href="${pickupLink}">Luggage Drop-off/Pickup Guide / 짐 맡기기·찾기 안내</a>
-            <a class="button" target="_top" href="${nextDayLink}">Next-day Pickup Guide / 익일 수령 안내</a>
-
             ${buildStaffActionHtmlFinal_(r, token, params)}
 
             <div class="note">
@@ -1841,7 +1826,7 @@ function buildInlineStaffLoginHtmlFinal_(reservation, token) {
       <div style="padding:14px;border:2px solid #111;border-radius:12px;background:#fff;margin-bottom:12px;">
         <div style="font-size:clamp(15px,3vw,22px);color:#555;font-weight:900;">현장 추가 결제금액 / Onsite Cash Due</div>
         <div id="onsiteDueBox" style="font-size:clamp(28px,5.4vw,44px);font-weight:950;letter-spacing:-.04em;line-height:1.05;">₩0</div>
-        <div style="font-size:clamp(13px,2.7vw,20px);color:#666;line-height:1.45;font-weight:750;">첫 번째 캐리어 예약 결제분 제외. 추가 캐리어 ₩20,000 / 추가 짐 ₩10,000.</div>
+        <div style="font-size:clamp(13px,2.7vw,20px);color:#666;line-height:1.45;font-weight:750;">기본요금에 포함된 캐리어 1개 제외. 추가 캐리어 ₩20,000 / 캐리어 외 추가 짐 ₩10,000.</div>
       </div>
       <div style="margin:14px 0 16px;padding:14px;border-radius:12px;background:#fff;border:1px solid #ddd;font-size:clamp(16px,3.3vw,24px);line-height:1.45;color:#333;font-weight:850;">
         <div style="font-weight:950;margin-bottom:8px;">접수 전 확인</div>
