@@ -148,7 +148,8 @@ function money(n){return '₩'+Number(n||0).toLocaleString('ko-KR')}
 function koreanTime(value){const m=String(value||'').match(/^(\d{1,2}):(\d{2})/);if(!m)return value||'';const h=Number(m[1]),min=Number(m[2]);return (h<12?'오전':'오후')+' '+(h%12||12)+'시'+(min?' '+min+'분':'')}
 function koreanDate(value){const m=String(value||'').match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);return m?`${m[1]}년 ${Number(m[2])}월 ${Number(m[3])}일`:value||''}
 function checkinDue(){const s=Math.max(1,Number($('checkSuitcase').value||1));const e=Math.max(0,Number($('checkExtra').value||0));const due=Math.max(0,s-1)*20000+e*10000;$('checkDue').textContent=money(due);return due}
-function renderTags(tagsText){const tags=String(tagsText||'-').split(',').map(x=>x.trim()).filter(Boolean);return '<span class="tag-result">'+tags.map(t=>'<span class="tag-chip">'+esc(t)+'</span>').join('')+'</span>'}
+function displayTag(t){const digits=String(t||'').replace(/[^0-9]/g,'');return digits?digits.slice(-3).padStart(3,'0'):String(t||'-')}
+function renderTags(tagsText){const tags=String(tagsText||'-').split(',').map(x=>x.trim()).filter(Boolean);return '<span class="tag-result">'+tags.map(t=>'<span class="tag-chip">'+esc(displayTag(t))+'</span>').join('')+'</span>'}
 function renderCheckinReservation(r){
   const isDone=String(r.status||'')==='PICKED_UP';
   $('checkinReservation').innerHTML=`<div class="rid">${esc(r.reservation_id)}</div><div class="meta check-meta">${esc(r.customer_name)} · ${esc(r.customer_email)}<br>${esc(r.concert_title)}<br>${esc(koreanDate(r.concert_date))} · ${esc(koreanTime(r.concert_time))}<br>짐 맡기는 시간 ${esc(koreanTime(r.pickup_time))}<br>Status: ${esc(r.status||'')}</div>`;

@@ -676,6 +676,12 @@ function createWalkinReservationFinal(body) {
   }
 }
 
+function normalizeLuggageTagNumberFinal_(value) {
+  const digits = String(value || '').replace(/[^0-9]/g, '');
+  if (!digits) return 0;
+  return Number(digits.slice(-3));
+}
+
 function nextLuggageTagNumbersFinal_(count, concertId) {
   const total = Math.max(1, Number(count || 1));
   const targetConcertId = String(concertId || '').trim();
@@ -684,7 +690,7 @@ function nextLuggageTagNumbersFinal_(count, concertId) {
   rows.forEach(row => {
     if (targetConcertId && String(row.concert_id || '').trim() !== targetConcertId) return;
     String(row.luggage_tag_numbers || '').split(/[,\s]+/).forEach(part => {
-      const n = Number(String(part || '').replace(/[^0-9]/g, ''));
+      const n = normalizeLuggageTagNumberFinal_(part);
       if (!isNaN(n)) max = Math.max(max, n);
     });
   });
