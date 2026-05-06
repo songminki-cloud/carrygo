@@ -713,9 +713,9 @@ function nextWalkinReservationIdFinal_(concertDate) {
 function dateKeyFromConcertDateFinal_(concertDate) {
   const value = String(concertDate || '').trim();
   const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (match) return match[2] + match[3];
+  if (match) return match[1].slice(2) + match[2] + match[3];
   const parsed = new Date(value);
-  if (!isNaN(parsed.getTime())) return Utilities.formatDate(parsed, CARRYGO_TIMEZONE, 'MMdd');
+  if (!isNaN(parsed.getTime())) return Utilities.formatDate(parsed, CARRYGO_TIMEZONE, 'yyMMdd');
   throw new Error('Invalid concert_date: ' + concertDate);
 }
 
