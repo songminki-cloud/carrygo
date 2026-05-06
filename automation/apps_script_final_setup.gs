@@ -1829,10 +1829,10 @@ function buildInlineStaffLoginHtmlFinal_(reservation, token) {
         <div style="font-size:clamp(13px,2.7vw,20px);color:#666;line-height:1.45;font-weight:750;">기본요금에 포함된 캐리어 1개 제외. 추가 캐리어 ₩20,000 / 캐리어 외 추가 짐 ₩10,000.</div>
       </div>
       <div style="margin:14px 0 16px;padding:14px;border-radius:12px;background:#fff;border:1px solid #ddd;font-size:clamp(16px,3.3vw,24px);line-height:1.45;color:#333;font-weight:850;">
-        <div style="font-weight:950;margin-bottom:8px;">접수 전 확인</div>
-        <div>1. 하드카피 동의서 작성/서명</div>
-        <div>2. 추가금이 있으면 현금 수납</div>
-        <div>3. 러기지택 번호 기재 및 부착</div>
+        <div style="font-weight:950;margin-bottom:8px;">태그번호 발급 후 안내</div>
+        <div>1. 태그번호를 짐과 동의서에 기재</div>
+        <div>2. 러기지택을 짐에 부착</div>
+        <div>3. 추가금이 있으면 현금 수납</div>
         <div>4. 태그번호가 보이게 사진 촬영</div>
       </div>
       <div id="staffLoginBox">
@@ -2091,10 +2091,6 @@ function onsiteCheckinApiFinal_(params) {
     if (String(r.status || '') !== 'CONFIRMED' || String(r.payment_status || '') !== 'PAID') {
       throw new Error('Reservation is not confirmed/paid yet.');
     }
-
-    if (String(params.onsite_cash_received || '').toUpperCase() !== 'YES') throw new Error('Cash collection confirmation is required.');
-    if (String(params.onsite_tag_attached || '').toUpperCase() !== 'YES') throw new Error('Luggage tag attachment confirmation is required.');
-    if (String(params.onsite_photo_taken || '').toUpperCase() !== 'YES') throw new Error('Photo confirmation is required.');
 
     const actualSuitcase = normalizeCountFinal_(params.actual_suitcase_count || r.expected_suitcase_count, 1);
     const actualExtra = normalizeCountFinal_(params.actual_extra_bag_count || r.expected_extra_bag_count, 0);
