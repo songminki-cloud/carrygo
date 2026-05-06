@@ -1795,10 +1795,13 @@ function buildInlineStaffLoginHtmlFinal_(reservation, token) {
         <div id="onsiteDueBox" style="font-size:clamp(28px,5.4vw,44px);font-weight:950;letter-spacing:-.04em;line-height:1.05;">₩0</div>
         <div style="font-size:clamp(13px,2.7vw,20px);color:#666;line-height:1.45;font-weight:750;">첫 번째 캐리어 예약 결제분 제외. 추가 캐리어 ₩20,000 / 추가 짐 ₩10,000.</div>
       </div>
-      <label style="display:flex;gap:10px;align-items:flex-start;font-size:clamp(16px,3.3vw,24px);line-height:1.38;color:#333;font-weight:850;margin-bottom:13px;"><input id="hardcopyInput" type="checkbox" style="width:18px;height:18px;min-width:18px;margin-top:2px;">하드카피 동의서 작성/서명 및 실제 수량 확인 완료</label>
-      <label style="display:flex;gap:10px;align-items:flex-start;font-size:clamp(16px,3.3vw,24px);line-height:1.38;color:#333;font-weight:850;margin-bottom:13px;"><input id="cashInput" type="checkbox" style="width:18px;height:18px;min-width:18px;margin-top:2px;">현장 추가금/현금 수납 완료</label>
-      <label style="display:flex;gap:10px;align-items:flex-start;font-size:clamp(16px,3.3vw,24px);line-height:1.38;color:#333;font-weight:850;margin-bottom:13px;"><input id="tagInput" type="checkbox" style="width:18px;height:18px;min-width:18px;margin-top:2px;">러기지택 고객용/짐부착용 기재 및 부착 완료</label>
-      <label style="display:flex;gap:10px;align-items:flex-start;font-size:clamp(16px,3.3vw,24px);line-height:1.38;color:#333;font-weight:850;margin-bottom:16px;"><input id="photoInput" type="checkbox" style="width:18px;height:18px;min-width:18px;margin-top:2px;">스태프폰 사진 촬영 완료 · 태그번호가 보이게 촬영</label>
+      <div style="margin:14px 0 16px;padding:14px;border-radius:12px;background:#fff;border:1px solid #ddd;font-size:clamp(16px,3.3vw,24px);line-height:1.45;color:#333;font-weight:850;">
+        <div style="font-weight:950;margin-bottom:8px;">접수 전 확인</div>
+        <div>1. 하드카피 동의서 작성/서명</div>
+        <div>2. 추가금이 있으면 현금 수납</div>
+        <div>3. 러기지택 번호 기재 및 부착</div>
+        <div>4. 태그번호가 보이게 사진 촬영</div>
+      </div>
       <div id="staffLoginBox">
         <input id="staffCodeInput" placeholder="Staff code" autocomplete="off" style="box-sizing:border-box;width:100%;font-size:clamp(22px,4.8vw,34px);padding:18px;border:1px solid #ccc;border-radius:10px;margin:0 0 14px;">
       </div>
@@ -1851,16 +1854,6 @@ function buildInlineStaffLoginHtmlFinal_(reservation, token) {
 
       async function carryGoOnsiteCheckinFinal() {
         const msg = document.getElementById('staffMsg');
-        if (!document.getElementById('hardcopyInput').checked) {
-          msg.style.color = '#b00020';
-          msg.textContent = '하드카피 동의서 확인 체크가 필요합니다.';
-          return;
-        }
-        if (!document.getElementById('cashInput').checked || !document.getElementById('tagInput').checked || !document.getElementById('photoInput').checked) {
-          msg.style.color = '#b00020';
-          msg.textContent = '현금수납, 러기지택 부착, 사진촬영 완료 체크가 필요합니다.';
-          return;
-        }
         msg.style.color = '#555';
         msg.textContent = 'Saving...';
         const q = new URLSearchParams({
@@ -1871,9 +1864,9 @@ function buildInlineStaffLoginHtmlFinal_(reservation, token) {
           staff_code: document.getElementById('staffCodeInput') ? document.getElementById('staffCodeInput').value.trim() : '',
           actual_suitcase_count: document.getElementById('actualSuitcaseInput').value,
           actual_extra_bag_count: document.getElementById('actualExtraInput').value,
-          onsite_cash_received: document.getElementById('cashInput').checked ? 'YES' : 'NO',
-          onsite_tag_attached: document.getElementById('tagInput').checked ? 'YES' : 'NO',
-          onsite_photo_taken: document.getElementById('photoInput').checked ? 'YES' : 'NO'
+          onsite_cash_received: 'YES',
+          onsite_tag_attached: 'YES',
+          onsite_photo_taken: 'YES'
         });
         try {
           const data = await carryGoFetchJsonFinal(CARRYGO_WEBAPP_URL + '?' + q.toString());
