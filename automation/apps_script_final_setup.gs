@@ -57,6 +57,7 @@ const RESERVATIONS_HEADERS = [
   'concert_title',
   'concert_date',
   'concert_time',
+  'pickup_time',
   'venue',
   'customer_country',
   'country_code',
@@ -239,7 +240,7 @@ function applySheetFormatsFinal_(sh, sheetName, headers) {
   ]);
 
   if (sheetName === CARRYGO_SHEETS.CONCERT_DATES || sheetName === CARRYGO_SHEETS.RESERVATIONS) {
-    formatColumnsAsText_(sh, headers, ['concert_date', 'concert_time']);
+    formatColumnsAsText_(sh, headers, ['concert_date', 'concert_time', 'pickup_time']);
   }
 }
 
@@ -464,6 +465,7 @@ function createReservationFinal(body) {
       concert_title: concert.concert_title,
       concert_date: concertDate.concert_date,
       concert_time: concertDate.concert_time,
+      pickup_time: requiredPickupTimeFinal_(body.pickup_time),
       venue: concert.venue,
       customer_country: requiredStringFinal_(body.customer_country, 'customer_country'),
       country_code: countryCode,
@@ -621,6 +623,16 @@ function validateReservationFinal_(row) {
   if (!row.phone_number) throw new Error('phone_number is required');
   if (!row.phone_full) throw new Error('phone_full is required');
   if (row.expected_suitcase_count < 1) throw new Error('expected_suitcase_count must be at least 1');
+  if (!row.pickup_time) throw new Error('pickup_time is required');
+}
+
+function requiredPickupTimeFinal_(value) {
+  const normalized = String(value || '').trim();
+  const allowed = ['10:00', '12:00', '14:00'];
+  if (!allowed.includes(normalized)) {
+    throw new Error('pickup_time must be one of: ' + allowed.join(', '));
+  }
+  return normalized;
 }
 
 function readSheetObjectsFinal_(sheetName, headers) {
@@ -751,6 +763,7 @@ function testCreateReservationFinal() {
     customer_email: 'song.minki@gmail.com',
     phone_number: '010-3345-6625',
     payment_method: 'KAKAOPAY',
+    pickup_time: '10:00',
     expected_suitcase_count: 1,
     expected_extra_bag_count: 0,
     note: 'test reservation from Apps Script'
@@ -774,6 +787,7 @@ function testCreateReservationPayPalFinal() {
     customer_email: 'jeadee@naver.com',
     phone_number: '555-123-4567',
     payment_method: 'PAYPAL',
+    pickup_time: '12:00',
     expected_suitcase_count: 1,
     expected_extra_bag_count: 1,
     note: 'paypal test reservation from Apps Script'
@@ -812,13 +826,14 @@ function buildPaymentInstructionEmailBodyFinal_(r) {
     '콘서트: ' + r.concert_title,
     '공연일: ' + r.concert_date + ' ' + r.concert_time,
     '장소: ' + r.venue,
+    '짐 맡기는 시간: ' + (r.pickup_time || '') + ' (선택 시간 30분 전부터 정시까지 도착)',
     '',
     '기본 이용료 / Base Fee:',
     formatAmountDisplayFinal_(r),
     '',
     '포함 사항:',
     '- 캐리어 1개',
-    '- 당일 픽업 & 드랍',
+    '- 선택한 시간에 짐 맡기기',
     '- 공연 종료 후 2시간 이내 수령',
     '- 최대 28인치 / 23kg 이하',
     '',
@@ -853,13 +868,14 @@ function buildPaymentInstructionEmailBodyFinal_(r) {
     'Concert: ' + r.concert_title,
     'Date & Time: ' + r.concert_date + ' ' + r.concert_time,
     'Venue: ' + r.venue,
+    'Drop-off Time: ' + (r.pickup_time || '') + ' (Please arrive from 30 minutes before until the selected time)',
     '',
     'Base Fee:',
     formatAmountDisplayFinal_(r),
     '',
     'Included:',
     '- 1 suitcase',
-    '- Same-day pickup & drop',
+    '- Luggage drop-off at your selected time',
     '- Pickup within 2 hours after the concert ends',
     '- Up to 28 inches / 23kg',
     '',
@@ -975,6 +991,7 @@ function testSendPaymentInstructionEmailFinal() {
     customer_email: 'song.minki@gmail.com',
     phone_number: '010-3345-6625',
     payment_method: 'KAKAOPAY',
+    pickup_time: '10:00',
     expected_suitcase_count: 1,
     expected_extra_bag_count: 0,
     note: 'email test reservation from Apps Script'
@@ -1053,6 +1070,7 @@ function buildReservationConfirmedEmailBodyFinal_(r) {
     '콘서트: ' + r.concert_title,
     '공연일: ' + r.concert_date + ' ' + r.concert_time,
     '장소: ' + r.venue,
+    '짐 맡기는 시간: ' + (r.pickup_time || '') + ' (선택 시간 30분 전부터 정시까지 도착)',
     '결제상태: 결제 완료',
     '',
     '픽드랍 안내:',
@@ -1063,7 +1081,7 @@ function buildReservationConfirmedEmailBodyFinal_(r) {
     '',
     '기본 이용료 / Base Fee 포함 사항:',
     '- 캐리어 1개',
-    '- 당일 픽업 & 드랍',
+    '- 선택한 시간에 짐 맡기기',
     '- 공연 종료 후 2시간 이내 수령',
     '- 최대 28인치 / 23kg 이하',
     '',
@@ -1072,7 +1090,8 @@ function buildReservationConfirmedEmailBodyFinal_(r) {
     '- 한화가 없을 경우 1개당 $10 현금 결제 가능',
     '- 현장 환율 계산 없음',
     '',
-    '픽업 시 안내:',
+    '짐 맡길 때 안내:',
+    '- 선택한 시간 30분 전부터 정시까지 지정 장소로 와주세요. 늦으면 노쇼 처리될 수 있습니다.',
     '- 현장에서 예약 QR을 스태프에게 보여주세요.',
     '- CarryGo 스태프가 러기지택 / Luggage Tag를 짐에 부착합니다.',
     '- 고객용 러기지택은 공연 후 수령 시 필요하니 잃어버리지 말고 보관해 주세요.',
@@ -1108,6 +1127,7 @@ function buildReservationConfirmedEmailBodyFinal_(r) {
     'Concert: ' + r.concert_title,
     'Date & Time: ' + r.concert_date + ' ' + r.concert_time,
     'Venue: ' + r.venue,
+    'Drop-off Time: ' + (r.pickup_time || '') + ' (Please arrive from 30 minutes before until the selected time)',
     'Payment Status: Paid',
     '',
     'Pickup & Drop Guide:',
@@ -1118,7 +1138,7 @@ function buildReservationConfirmedEmailBodyFinal_(r) {
     '',
     'Base Fee includes:',
     '- 1 suitcase',
-    '- Same-day pickup & drop',
+    '- Luggage drop-off at your selected time',
     '- Pickup within 2 hours after the concert ends',
     '- Up to 28 inches / 23kg',
     '',
@@ -1127,7 +1147,8 @@ function buildReservationConfirmedEmailBodyFinal_(r) {
     '- If you do not have KRW cash, you may pay $10 cash per item',
     '- We do not calculate exchange rates onsite',
     '',
-    'Pickup instructions:',
+    'Drop-off instructions:',
+    '- Please arrive at the designated location from 30 minutes before until your selected time. Late arrival may be treated as a no-show.',
     '- Please show your reservation QR code to the CarryGo staff onsite.',
     '- CarryGo staff will attach a Luggage Tag to your luggage.',
     '- Please keep your customer Luggage Tag until after-concert pickup.',
@@ -1237,6 +1258,7 @@ function buildReservationConfirmedEmailHtmlFinal_(r) {
       <tr><td style="padding:6px 0;font-weight:bold;">Concert</td><td>${escapeHtmlFinal_(r.concert_title)}</td></tr>
       <tr><td style="padding:6px 0;font-weight:bold;">Date & Time</td><td>${escapeHtmlFinal_(r.concert_date)} ${escapeHtmlFinal_(r.concert_time)}</td></tr>
       <tr><td style="padding:6px 0;font-weight:bold;">Venue</td><td>${escapeHtmlFinal_(r.venue)}</td></tr>
+      <tr><td style="padding:6px 0;font-weight:bold;">Drop-off Time</td><td>${escapeHtmlFinal_(r.pickup_time || '')} · arrive 30 min before–on time</td></tr>
       <tr><td style="padding:6px 0;font-weight:bold;">Payment</td><td>Paid / 결제 완료</td></tr>
     </table>
 
@@ -1314,6 +1336,7 @@ function renderCheckinPageFinal_(params) {
             <div class="row"><div class="label">Concert / 콘서트</div><div class="value">${escapeHtmlFinal_(r.concert_title)}</div></div>
             <div class="row"><div class="label">Date & Time / 공연일</div><div class="value">${escapeHtmlFinal_(r.concert_date)} ${escapeHtmlFinal_(r.concert_time)}</div></div>
             <div class="row"><div class="label">Venue / 장소</div><div class="value">${escapeHtmlFinal_(r.venue)}</div></div>
+            <div class="row"><div class="label">Drop-off Time / 짐 맡기는 시간</div><div class="value">${escapeHtmlFinal_(r.pickup_time || '')} · 30분 전부터 정시까지</div></div>
 
             <a class="button" target="_top" href="${pickupLink}">Pickup & Drop Guide / 픽드랍 안내</a>
             <a class="button" target="_top" href="${nextDayLink}">Next-day Pickup Guide / 익일 수령 안내</a>
