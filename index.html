@@ -120,6 +120,8 @@
   <div class="bottom-space"></div>
 </main>
 <script>
+if('scrollRestoration' in history)history.scrollRestoration='manual';
+if(!location.hash)window.addEventListener('pageshow',()=>window.scrollTo(0,0));
 const CARRYGO_SCRIPT_URL='https://script.google.com/macros/s/AKfycbyWazV2Bwyex0hyUG17615cCd4zFLnBOPABVv9wQ4AoVltXFrZ8Qh5ncPQtEW-c9ZFs/exec';
 const fallbackConcerts=[{id:'shinee_world_vii',title:'SHINee WORLD VII',venue:'KSPO DOME',city:'SEOUL'}];
 const fallbackDates={shinee_world_vii:[{id:'shinee_20260530',label:'2026-05-30 19:00'},{id:'shinee_20260531',label:'2026-05-31 18:00'},{id:'shinee_20260601',label:'2026-06-01 17:00'}]};
