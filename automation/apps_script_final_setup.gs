@@ -86,7 +86,12 @@ const RESERVATIONS_HEADERS = [
   'picked_up_by',
   'agreement_version',
   'note',
-  'pickup_time'
+  'pickup_time',
+  'booking_channel',
+  'luggage_tag_numbers',
+  'onsite_payment_method',
+  'onsite_staff',
+  'onsite_consent_flags'
 ];
 
 const STAFF_HEADERS = [
@@ -397,6 +402,10 @@ function doPost(e) {
       return jsonFinal_({ ok: true, reservation: createReservationFinal(body) });
     }
 
+    if (action === 'create_walkin_reservation') {
+      return jsonFinal_({ ok: true, reservation: createWalkinReservationFinal(body) });
+    }
+
     return jsonFinal_({ ok: false, error: 'Unknown action: ' + action });
   } catch (err) {
     return jsonFinal_({ ok: false, error: String(err && err.message ? err.message : err) });
@@ -496,7 +505,12 @@ function createReservationFinal(body) {
       qr_file_url: '',
       picked_up_by: '',
       agreement_version: CARRYGO_AGREEMENT_VERSION,
-      note: String(body.note || '').trim()
+      note: String(body.note || '').trim(),
+      booking_channel: 'ONLINE',
+      luggage_tag_numbers: '',
+      onsite_payment_method: '',
+      onsite_staff: '',
+      onsite_consent_flags: ''
     };
 
     validateReservationFinal_(rowObject);
@@ -528,6 +542,109 @@ function createReservationFinal(body) {
   } finally {
     lock.releaseLock();
   }
+}
+
+
+function createWalkinReservationFinal(body) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+
+  try {
+    const staff = findStaffByCodeFinal_(body.staff_code);
+    if (!staff) throw new Error('Invalid staff_code');
+
+    const now = new Date();
+    const concert = findActiveConcertFinal_(body.concert_id);
+    const concertDate = findActiveConcertDateFinal_(body.concert_date_id, concert.concert_id);
+    const reservationId = nextReservationIdFinal_(concert.concert_code, concertDate.concert_date);
+    const suitcaseCount = normalizeCountFinal_(body.expected_suitcase_count, 1);
+    const extraBagCount = normalizeCountFinal_(body.expected_extra_bag_count, 0);
+    if (suitcaseCount < 1) throw new Error('expected_suitcase_count must be at least 1');
+    const paidAmount = suitcaseCount * 20000 + extraBagCount * 10000;
+    const countryCode = normalizeCountryCodeFinal_(body.country_code || '+82');
+    const phoneNumber = String(body.phone_number || '').trim();
+    const phoneFull = normalizePhoneFullFinal_(countryCode, phoneNumber);
+    const tagNumbers = requiredStringFinal_(body.luggage_tag_numbers, 'luggage_tag_numbers');
+    const consentFlags = buildWalkinConsentFlagsFinal_(body);
+
+    const rowObject = {
+      reservation_id: reservationId,
+      status: 'PICKED_UP',
+      created_at: now,
+      confirmed_at: now,
+      picked_up_at: now,
+      returned_at: '',
+      cancelled_at: '',
+      refunded_at: '',
+      concert_id: concert.concert_id,
+      concert_date_id: concertDate.concert_date_id,
+      concert_code: concert.concert_code,
+      concert_title: concert.concert_title,
+      concert_date: concertDate.concert_date,
+      concert_time: concertDate.concert_time,
+      venue: concert.venue,
+      customer_country: String(body.customer_country || 'WALK_IN').trim(),
+      country_code: countryCode,
+      customer_name: requiredStringFinal_(body.customer_name, 'customer_name'),
+      customer_email: String(body.customer_email || '').trim(),
+      phone_number: phoneNumber,
+      phone_full: phoneFull,
+      payment_method: 'CASH',
+      base_fee: paidAmount,
+      currency: 'KRW',
+      payment_status: 'PAID',
+      payment_due_at: '',
+      paid_at: now,
+      paid_amount: paidAmount,
+      refund_amount: '',
+      refund_method: '',
+      refund_note: '',
+      expected_suitcase_count: suitcaseCount,
+      expected_extra_bag_count: extraBagCount,
+      next_day_pickup_required: 'NO',
+      next_day_pickup_fee_status: 'NONE',
+      checkin_token: '',
+      qr_checkin_url: '',
+      qr_file_url: '',
+      picked_up_by: staff.staff_id || staff.staff_name || 'STAFF',
+      agreement_version: CARRYGO_AGREEMENT_VERSION,
+      note: String(body.note || '').trim(),
+      pickup_time: String(body.pickup_time || 'WALK_IN').trim(),
+      booking_channel: 'WALK_IN',
+      luggage_tag_numbers: tagNumbers,
+      onsite_payment_method: 'CASH',
+      onsite_staff: staff.staff_id || staff.staff_name || '',
+      onsite_consent_flags: consentFlags
+    };
+
+    const sh = getSheetFinal_(CARRYGO_SHEETS.RESERVATIONS);
+    sh.appendRow(RESERVATIONS_HEADERS.map(header => rowObject[header] !== undefined ? rowObject[header] : ''));
+    applySheetFormatsFinal_(sh, CARRYGO_SHEETS.RESERVATIONS, RESERVATIONS_HEADERS);
+
+    return {
+      reservation_id: rowObject.reservation_id,
+      status: rowObject.status,
+      booking_channel: rowObject.booking_channel,
+      payment_status: rowObject.payment_status,
+      paid_amount: rowObject.paid_amount,
+      amount_display: '₩' + Number(rowObject.paid_amount || 0).toLocaleString('ko-KR'),
+      concert_title: rowObject.concert_title,
+      concert_date: rowObject.concert_date,
+      concert_time: rowObject.concert_time,
+      customer_name: rowObject.customer_name,
+      phone_full: rowObject.phone_full,
+      expected_suitcase_count: rowObject.expected_suitcase_count,
+      expected_extra_bag_count: rowObject.expected_extra_bag_count,
+      luggage_tag_numbers: rowObject.luggage_tag_numbers
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function buildWalkinConsentFlagsFinal_(body) {
+  const keys = ['valuables','electronics','fragile','partial_pickup','existing_damage','third_party_pickup','off_time_request','weather_sensitive'];
+  return keys.map(key => key + '=' + String(body[key] || 'NO').trim().toUpperCase()).join('; ');
 }
 
 function findActiveConcertFinal_(concertId) {
@@ -2340,6 +2457,8 @@ function adminReservationSummaryFinal_(row) {
     concert_date: row.concert_date,
     concert_time: row.concert_time,
     pickup_time: row.pickup_time,
+    booking_channel: row.booking_channel,
+    luggage_tag_numbers: row.luggage_tag_numbers,
     expected_suitcase_count: row.expected_suitcase_count,
     expected_extra_bag_count: row.expected_extra_bag_count,
     payment_method: row.payment_method,

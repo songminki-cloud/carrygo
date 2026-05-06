@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CarryGo Walk-in</title>
+<link rel="stylesheet" href="css/tokens.css">
+<style>
+*{box-sizing:border-box}body{margin:0;background:var(--cg-warm-paper,#f7f3ec);color:#111;font-family:Inter,'Noto Sans KR',system-ui,sans-serif}.page{max-width:480px;margin:0 auto;padding:16px}.card{background:#fff;border:2px solid #111;border-radius:18px;padding:18px;margin:14px 0}h1{font-size:38px;line-height:.9;margin:0 0 10px;font-weight:950;letter-spacing:-.05em}p{font-size:13px;line-height:1.45;color:#555;font-weight:750}.label{display:block;margin:13px 0 6px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:950;color:#736f68}input,select,textarea{width:100%;min-height:54px;border:1.4px solid #d8d1c7;border-radius:13px;padding:14px;font-size:16px;font-weight:850;background:#fff;color:#111}textarea{min-height:80px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.q{border:1px solid #ddd4c8;border-radius:13px;padding:12px;margin-top:10px}.q strong{display:block;font-size:13px;line-height:1.35}.yn{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.yn label{border:1.2px solid #111;border-radius:999px;padding:10px;text-align:center;font-size:13px;font-weight:900}.yn input{width:auto;min-height:0;margin-right:5px}.btn{width:100%;border:0;border-radius:999px;background:#050505;color:#fff;padding:16px 12px;font-size:16px;font-weight:950;margin-top:14px}.btn:disabled{opacity:.45}.result{display:none;border:2px solid #10b981;background:#ecfff7;border-radius:16px;padding:16px;margin-top:14px}.err{color:#8f3c32!important}.small{font-size:12px;color:#736f68;font-weight:800}.amount{font-size:30px;font-weight:950;letter-spacing:-.05em}</style>
+</head>
+<body>
+<main class="page">
+  <section class="card">
+    <h1>WALK-IN<br>CHECK-IN</h1>
+    <p>현장접수 전용. 결제 안내메일 없이 현장 현금 결제 후 바로 접수 완료 기록을 남깁니다.</p>
+
+    <form id="walkinForm">
+      <label class="label">Staff Code</label><input type="text" name="staff_code" required inputmode="numeric" placeholder="스태프 코드">
+      <label class="label">Concert</label><select name="concert_id" id="concertSelect" required></select>
+      <label class="label">Show Date</label><select name="concert_date_id" id="dateSelect" required></select>
+      <label class="label">Drop-off Time</label><select name="pickup_time" id="pickupTime" required></select>
+
+      <label class="label">Name</label><input type="text" name="customer_name" required placeholder="MINJI KIM">
+      <label class="label">Emergency Contact</label><input type="tel" name="phone_number" required inputmode="tel" placeholder="010-0000-0000">
+      <input type="hidden" name="country_code" value="+82"><input type="hidden" name="customer_country" value="WALK_IN">
+
+      <div class="grid">
+        <div><label class="label">Suitcase</label><select name="expected_suitcase_count" id="suitcase"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></div>
+        <div><label class="label">Extra Bag</label><select name="expected_extra_bag_count" id="extra"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></div>
+      </div>
+      <label class="label">Luggage Tag No.</label><input type="text" name="luggage_tag_numbers" required placeholder="예: 001,002 / 캐리어와 추가짐 태그 번호">
+      <div class="small">현장 현금 결제금액</div><div class="amount" id="amount">₩20,000</div>
+
+      <label class="label">Consent Questions</label>
+      <div id="questions"></div>
+      <label class="label">Note</label><textarea name="note" placeholder="특이사항 / YES 항목 메모"></textarea>
+      <button class="btn" type="submit">현장접수 저장</button>
+      <div class="result" id="result"></div>
+      <p class="small" id="msg">저장 후 러기지택 부착, 사진 촬영, 현금 수납을 완료하세요.</p>
+    </form>
+  </section>
+</main>
+<script>
+const API='https://script.google.com/macros/s/AKfycbyWazV2Bwyex0hyUG17615cCd4zFLnBOPABVv9wQ4AoVltXFrZ8Qh5ncPQtEW-c9ZFs/exec';
+const fallbackConcerts=[{concert_id:'shinee_world_vii',concert_title:'SHINee WORLD VII',venue:'KSPO DOME'}];
+const fallbackDates={shinee_world_vii:[{concert_date_id:'shinee_20260530',concert_date:'2026-05-30',concert_time:'19:00',pickup_time_options:'10:00,12:00,14:00'}]};
+const qs=[['valuables','Valuables / 귀중품·여권·현금 있음?'],['electronics','Electronics / 전자기기·배터리 있음?'],['fragile','Fragile items / 깨지는 물품·향수·굿즈 있음?'],['partial_pickup','Partial pickup / 일부 물품 회수 필요?'],['existing_damage','Existing damage / 기존 파손·오염 있음?'],['third_party_pickup','Third-party pickup / 대리수령 예정?'],['off_time_request','Off-time request / 지정 외 시간 요청?'],['weather_sensitive','Weather sensitive / 비·먼지·마찰 취약?']];
+document.getElementById('questions').innerHTML=qs.map(([k,t])=>`<div class="q"><strong>${t}</strong><div class="yn"><label><input type="radio" name="${k}" value="YES">YES</label><label><input type="radio" name="${k}" value="NO" checked>NO</label></div></div>`).join('');
+function pickupOptions(v){const arr=String(v||'10:00,12:00,14:00').split(/[,\n]+/).map(x=>x.trim()).filter(Boolean);return arr.length?arr:['10:00','12:00','14:00']}
+function windowLabel(t){const [h,m]=t.split(':').map(Number);const d=new Date(2000,0,1,h,m);d.setMinutes(d.getMinutes()-30);return `${t} · ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}–${t}`}
+function setPickup(v){pickupTime.innerHTML=pickupOptions(v).map(t=>`<option value="${t}">${windowLabel(t)}</option>`).join('')}
+function updateAmount(){const s=+suitcase.value||0,e=+extra.value||0;amount.textContent='₩'+(s*20000+e*10000).toLocaleString('ko-KR')}
+suitcase.addEventListener('change',updateAmount);extra.addEventListener('change',updateAmount);
+async function loadConcerts(){let concerts=fallbackConcerts;try{const r=await fetch(API+'?action=get_active_concerts',{cache:'no-store'});const o=await r.json();if(o.ok&&o.concerts?.length)concerts=o.concerts}catch(e){}concertSelect.innerHTML=concerts.map(c=>`<option value="${c.concert_id}">${c.concert_title} · ${c.venue}</option>`).join('');await loadDates()}
+async function loadDates(){const id=concertSelect.value;let dates=fallbackDates[id]||[];try{const r=await fetch(API+'?action=get_active_concert_dates&concert_id='+encodeURIComponent(id),{cache:'no-store'});const o=await r.json();if(o.ok&&o.concert_dates?.length)dates=o.concert_dates}catch(e){}dateSelect.innerHTML=dates.map(d=>`<option value="${d.concert_date_id}" data-times="${d.pickup_time_options||'10:00,12:00,14:00'}">${d.concert_date} ${d.concert_time||''}</option>`).join('');setPickup(dateSelect.selectedOptions[0]?.dataset.times||'')}
+concertSelect.addEventListener('change',loadDates);dateSelect.addEventListener('change',()=>setPickup(dateSelect.selectedOptions[0]?.dataset.times||''));loadConcerts();updateAmount();
+walkinForm.addEventListener('submit',async e=>{e.preventDefault();const btn=e.submitter;const msg=document.getElementById('msg');const result=document.getElementById('result');const data=Object.fromEntries(new FormData(walkinForm).entries());data.action='create_walkin_reservation';btn.disabled=true;msg.textContent='저장 중...';msg.classList.remove('err');result.style.display='none';try{const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(data)});const o=await r.json();if(!o.ok)throw new Error(o.error||'save failed');const x=o.reservation;result.innerHTML=`<b>저장 완료</b><br>예약번호: <code>${x.reservation_id}</code><br>태그: ${x.luggage_tag_numbers}<br>금액: ${x.amount_display}<br>상태: ${x.status}`;result.style.display='block';msg.textContent='러기지택/사진/현금 수납까지 완료했는지 확인하세요.';walkinForm.reset();document.querySelectorAll('#questions input[value=NO]').forEach(i=>i.checked=true);updateAmount();await loadDates()}catch(err){msg.textContent=err.message||String(err);msg.classList.add('err')}finally{btn.disabled=false}});
+</script>
+</body>
+</html>
