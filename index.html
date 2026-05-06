@@ -89,6 +89,7 @@
         <div class="check-item"><span class="check-mark">!</span><span><b>선택한 짐 맡기는 시간 30분 전부터 정시까지</b> 지정 장소로 와주세요. 늦으면 노쇼 처리될 수 있습니다.</span></div>
         <div class="check-item"><span class="check-mark">!</span><span><b>예약 시 결제는 첫 번째 캐리어 요금</b>입니다. 캐리어는 크기와 상관없이 개당 ₩20,000이며, 2개 이상은 현장에서 추가 결제합니다.</span></div>
         <div class="check-item"><span class="check-mark">!</span><span><b>캐리어 외 추가 짐은 개당 ₩10,000</b>입니다. 쇼핑백·백팩 등은 현장에서 수량 확인 후 현금 결제합니다.</span></div>
+        <div class="check-item"><span class="check-mark">!</span><span><b>현장 접수 시 보관 동의서 작성이 필요</b>합니다. 캐리어 내부의 귀중품·전자기기·깨지기 쉬운 물품은 보관 대상이 아니며, 내부 물품 파손·분실은 보상되지 않습니다.</span></div>
         <div class="check-item"><span class="check-mark">!</span><span><b>현장 결제는 KRW 현금 기준</b>입니다. 한화가 없을 경우 현장에 한해 USD 현금 결제가 가능합니다. (₩10,000 = $10 / ₩20,000 = $20)</span></div>
         <div class="check-item"><span class="check-mark">!</span><span><b>공연 종료 후 2시간 이내 수령</b>해야 합니다. 공연 당일 찾지 못한 경우 익일 수령 요금이 추가됩니다.</span></div>
       </div>
@@ -98,6 +99,7 @@
       <div class="section-title"><h2>FAQ</h2><span>자주 묻는 질문</span></div>
       <div class="faq-list">
         <div class="faq-item"><strong>선택한 시간보다 늦게 도착하면 어떻게 되나요?</strong><p>선택 시간 30분 전부터 정시까지 접수합니다. 늦으면 노쇼 처리될 수 있으며, 예약 요금은 환불되지 않습니다. 현장 상황에 따라 다음 시간대 접수가 가능할 수 있지만 보장되지 않습니다.</p></div>
+        <div class="faq-item"><strong>현장에서 동의서를 작성해야 하나요?</strong><p>네. 현장 접수 전 예약번호, 이름, 긴급 연락처를 적고 보관 동의서에 체크/서명해야 합니다. 귀중품, 여권, 현금, 전자기기, 유리·향수·화장품·굿즈 등 깨지기 쉬운 물품은 직접 소지해 주세요. 캐리어 내부 물품의 파손·분실은 보상되지 않습니다.</p></div>
         <div class="faq-item"><strong>신청 화면에 없는 시간에도 맡길 수 있나요?</strong><p>기본 운영 시간은 공연일별로 신청 화면에 표시된 시간만 해당됩니다. 차량과 스태프를 시간대별 수량에 맞춰 준비하기 때문에 지정 외 시간 요청은 확정 서비스가 아닙니다.</p></div>
         <div class="faq-item"><strong>공연 후 짐 찾는 시간도 예약해야 하나요?</strong><p>아니요. 짐 찾기는 별도 시간 선택 없이 공연 종료 후 2시간 이내 지정 장소로 오시면 됩니다. 러기지택 번호를 확인한 뒤 짐을 드립니다.</p></div>
         <div class="faq-item"><strong>이메일을 잘못 입력하면 어떻게 되나요?</strong><p>예약 확정메일, QR, 장소 안내, 긴급 변경 공지가 모두 이메일로 발송됩니다. 오타가 있으면 변경 발생 시 연락을 받을 수 없으니 신청 전 이메일을 꼭 확인해 주세요.</p></div>
@@ -121,6 +123,7 @@
         <div class="field"><label for="extraBagCount">캐리어 외 추가 짐</label><select name="expected_extra_bag_count" id="extraBagCount" required><option value="0">0개</option><option value="1">1개</option><option value="2">2개</option><option value="3">3개</option></select><div class="help">쇼핑백/백팩 등은 캐리어와 별도입니다. 현장에서 개당 ₩10,000 현금 결제합니다.</div></div>
         <div class="field"><label for="paymentMethod">예약 결제수단 / Payment</label><select name="payment_method" id="paymentMethod" required><option value="KAKAOPAY">KakaoPay · 첫 번째 캐리어 ₩20,000</option><option value="PAYPAL">PayPal · 첫 번째 캐리어 $15</option><option value="BANK">Bank transfer · 첫 번째 캐리어</option></select><div class="help">예약 결제수단은 첫 번째 캐리어 요금에만 적용됩니다. 추가 비용은 현장에서 확인 후 현금 결제합니다.</div></div>
         <div class="field full"><label for="note">요청사항 / Note</label><textarea name="note" id="note" placeholder="선택 입력 · 짐 특징만 적어주세요. 지정 외 시간 요청은 보장되지 않습니다."></textarea></div>
+        <label class="agree"><input type="checkbox" required><span>현장 접수 시 보관 동의서 작성이 필요하며, 캐리어 내부 물품의 파손·분실은 CarryGo가 책임지지 않음을 확인했습니다.</span></label>
         <label class="agree"><input type="checkbox" required><span>선택한 짐 맡기는 시간 30분 전부터 정시까지 지정 장소에 도착해야 하며, 늦으면 노쇼 처리될 수 있음을 확인했습니다.</span></label>
         <label class="agree"><input type="checkbox" required><span>예약 결제는 첫 번째 캐리어 요금이며, 추가 비용은 현장 결제임을 확인했습니다.</span></label>
         <label class="agree"><input type="checkbox" required><span>결제 후 고객 변심 취소 및 노쇼는 환불되지 않음을 확인했습니다.</span></label>
