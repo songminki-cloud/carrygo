@@ -84,11 +84,11 @@
     </section>
 
     <section class="section desktop-span">
-      <div class="section-title"><h2>Must Check</h2><span>예약 전 필수 확인</span></div>
+      <div class="section-title"><h2>Must Check</h2><span>모르고 예약하면 안 되는 것</span></div>
       <div class="checklist">
-        <div class="check-item"><span class="check-mark">!</span><span><b>선택한 짐 맡기는 시간 30분 전부터 정시까지</b> 지정 장소에 도착해야 합니다. 늦으면 노쇼 처리될 수 있습니다.</span></div>
+        <div class="check-item"><span class="check-mark">!</span><span><b>신청 후 결제 안내메일이 바로 발송</b>됩니다. 이메일을 잘못 입력하면 결제 안내, 예약 확정메일, QR, 장소 안내를 받을 수 없습니다.</span></div>
+        <div class="check-item"><span class="check-mark">!</span><span><b>선택한 짐 맡기는 시간 30분 전부터 정시까지</b> 지정 장소에 도착해야 합니다. 늦으면 노쇼 처리될 수 있으며 예약 요금은 환불되지 않습니다.</span></div>
         <div class="check-item"><span class="check-mark">!</span><span><b>예약 시 결제는 첫 번째 캐리어 1개 요금</b>입니다. 추가 캐리어와 추가 짐은 현장에서 수량 확인 후 현금 결제합니다.</span></div>
-        <div class="check-item"><span class="check-mark">!</span><span><b>공연 종료 후 2시간 이내 수령</b>해야 합니다. 당일 찾지 못하면 익일 수령 요금이 추가됩니다.</span></div>
         <div class="check-item"><span class="check-mark">!</span><span><b>귀중품·여권·현금·전자기기·깨지기 쉬운 물품은 직접 소지</b>해 주세요. 캐리어 내부 물품 파손·분실은 보상되지 않습니다.</span></div>
       </div>
     </section>
@@ -109,23 +109,20 @@
         <div class="field"><label for="extraBagCount">캐리어 외 추가 짐</label><select name="expected_extra_bag_count" id="extraBagCount" required><option value="0">0개</option><option value="1">1개</option><option value="2">2개</option><option value="3">3개</option></select><div class="help">쇼핑백/백팩 등은 캐리어와 별도입니다. 현장에서 개당 ₩10,000 현금 결제합니다.</div></div>
         <div class="field"><label for="paymentMethod">예약 결제수단 / Payment</label><select name="payment_method" id="paymentMethod" required><option value="KAKAOPAY">KakaoPay · 첫 번째 캐리어 ₩20,000</option><option value="PAYPAL">PayPal · 첫 번째 캐리어 $15</option><option value="BANK">Bank transfer · 첫 번째 캐리어</option></select><div class="help">예약 결제수단은 첫 번째 캐리어 요금에만 적용됩니다. 추가 비용은 현장에서 확인 후 현금 결제합니다.</div></div>
         <div class="field full"><label for="note">요청사항 / Note</label><textarea name="note" id="note" placeholder="선택 입력 · 짐 특징만 적어주세요. 지정 외 시간 요청은 보장되지 않습니다."></textarea></div>
-        <label class="agree"><input type="checkbox" required><span>현장 접수 시 보관 동의서 작성이 필요하며, 수량·내부 물품·기존 파손·대리수령·시간 정책 확인 후 서명해야 함을 확인했습니다.</span></label>
-        <label class="agree"><input type="checkbox" required><span>선택한 짐 맡기는 시간 30분 전부터 정시까지 지정 장소에 도착해야 하며, 늦으면 노쇼 처리될 수 있음을 확인했습니다.</span></label>
-        <label class="agree"><input type="checkbox" required><span>예약 결제는 첫 번째 캐리어 요금이며, 추가 비용은 현장 결제임을 확인했습니다.</span></label>
-        <label class="agree"><input type="checkbox" required><span>결제 후 고객 변심 취소 및 노쇼는 환불되지 않음을 확인했습니다.</span></label>
+        <label class="agree"><input type="checkbox" required><span>위 이메일로 결제 안내메일과 예약 확정 QR이 발송되며, 선택한 시간에 늦으면 노쇼 처리 및 환불 불가할 수 있고, 추가 짐 비용은 현장에서 현금 결제함을 확인했습니다.</span></label>
         <div class="submit-wrap"><button class="btn primary full" type="submit">신청하기</button></div>
         <div class="result" id="resultBox"></div>
       </form>
-      <div class="note" id="formMsg">신청 후 결제 안내메일이 발송됩니다. 이메일을 잘못 입력하면 예약 확정메일, QR, 장소 안내, 긴급 변경 공지를 받을 수 없습니다. 결제 후 예약 확정메일이 오지 않으면 hello@carrygo.kr 로 문의해 주세요.</div>
+      <div class="note" id="formMsg">신청하기를 누르면 결제 안내메일이 발송됩니다. 메일이 오지 않으면 스팸함을 먼저 확인해 주세요. 이메일을 잘못 입력했다면 신청서를 다시 작성하거나 hello@carrygo.kr 로 올바른 이메일을 보내주세요.</div>
     </section>
 
 
     <section class="section desktop-span" id="faq" aria-label="faq">
       <div class="section-title"><h2>FAQ</h2><span>자주 묻는 질문</span></div>
-      <p class="faq-lead">자주 생기는 상황만 정리했습니다. 첫 2개만 먼저 열어두고, 나머지는 필요할 때 펼쳐 보세요.</p>
+      <p class="faq-lead">예약 중 실제로 막히는 상황만 정리했습니다. 첫 2개만 먼저 열어두고, 나머지는 필요할 때 펼쳐 보세요.</p>
       <div class="faq-list">
-        <details class="faq-item" open><summary><strong>결제했는데 예약 확정메일이나 QR이 오지 않았어요. 어떻게 하나요?</strong></summary><p>스팸함/프로모션함을 먼저 확인해 주세요. 그래도 없으면 운영팀 이메일로 예약자 이름, 결제수단, 결제시간, 올바른 이메일 주소를 보내주세요. 확인 후 이메일 주소를 수정하고 확정메일과 QR을 다시 발송해 드립니다.</p></details>
-        <details class="faq-item" open><summary><strong>이메일을 잘못 입력한 것 같아요. 수정할 수 있나요?</strong></summary><p>네. 운영팀 이메일로 예약자 이름, 휴대폰 번호, 잘못 입력한 이메일, 새 이메일을 보내주세요. 예약 확인 후 수정해 드립니다. 장소 안내와 긴급 변경 공지도 이메일로 발송되므로 현장 전 반드시 수정해 주세요.</p></details>
+        <details class="faq-item" open><summary><strong>신청했는데 결제 안내메일이 오지 않았어요.</strong></summary><p>스팸함/프로모션함을 먼저 확인해 주세요. 그래도 없으면 이메일을 잘못 입력했을 수 있습니다. 신청서를 다시 작성하거나 hello@carrygo.kr 로 예약자 이름, 휴대폰 번호, 올바른 이메일 주소를 보내주세요.</p></details>
+        <details class="faq-item" open><summary><strong>결제했는데 예약 확정메일이나 QR이 오지 않았어요.</strong></summary><p>결제 확인 후 확정메일과 QR이 발송됩니다. 시간이 지나도 오지 않으면 hello@carrygo.kr 로 예약자 이름, 결제수단, 결제시간, 올바른 이메일 주소를 보내주세요. 확인 후 재발송해 드립니다.</p></details>
         <details class="faq-item"><summary><strong>선택한 시간보다 늦게 도착하면 어떻게 되나요?</strong></summary><p>선택 시간 30분 전부터 정시까지 접수합니다. 늦으면 노쇼 처리될 수 있으며 예약 요금은 환불되지 않습니다. 현장 상황에 따라 다음 시간대 접수가 가능할 수 있지만 보장되지는 않습니다.</p></details>
         <details class="faq-item"><summary><strong>신청 화면에 없는 시간에도 맡길 수 있나요?</strong></summary><p>기본 운영 시간은 공연일별로 신청 화면에 표시된 시간만 해당됩니다. 차량과 스태프를 시간대별 수량에 맞춰 준비하기 때문에 지정 외 시간 요청은 확정 서비스가 아닙니다.</p></details>
         <details class="faq-item"><summary><strong>캐리어가 2개 이상이면 어떻게 결제하나요?</strong></summary><p>예약 시에는 첫 번째 캐리어 1개 요금만 결제합니다. 2개째부터는 크기와 상관없이 현장에서 캐리어 1개당 ₩20,000을 현금으로 결제합니다.</p></details>
@@ -191,7 +188,7 @@ async function loadConcerts(){const select=document.getElementById('concertSelec
 async function loadConcertDates(){const concertId=document.getElementById('concertSelect').value;const select=document.getElementById('dateSelect');if(!concertId){select.innerHTML='<option value="">신청 가능한 공연일이 없습니다</option>';updatePickupTimeOptions('');return}select.innerHTML='<option value="">공연일을 불러오는 중입니다...</option>';try{const res=await fetch(`${CARRYGO_SCRIPT_URL}?action=get_active_concert_dates&concert_id=${encodeURIComponent(concertId)}`,{cache:'no-store'});const out=await res.json();if(!out.ok||!out.concert_dates?.length)throw new Error('no dates');const dates=futureDates(out.concert_dates);select.innerHTML=dates.length?dates.map(d=>`<option value="${d.concert_date_id}" data-pickup-times="${String(d.pickup_time_options||'10:00,12:00,14:00')}">${d.concert_date} ${d.concert_time||''}</option>`).join(''):'<option value="">신청 가능한 공연일이 없습니다</option>';updatePickupTimeOptions(select.selectedOptions[0]?.dataset.pickupTimes||'');}catch(e){const dates=futureDates(fallbackDates[concertId]||[]);select.innerHTML=dates.length?dates.map(d=>`<option value="${d.id}" data-pickup-times="${d.pickup_time_options||'10:00,12:00,14:00'}">${d.label}</option>`).join(''):'<option value="">신청 가능한 공연일이 없습니다</option>';updatePickupTimeOptions(select.selectedOptions[0]?.dataset.pickupTimes||'');}}
 document.getElementById('concertSelect').addEventListener('change',loadConcertDates);document.getElementById('dateSelect').addEventListener('change',e=>updatePickupTimeOptions(e.target.selectedOptions[0]?.dataset.pickupTimes||''));loadConcerts();
 function paymentLabel(method){return method==='PAYPAL'?'$15':'₩20,000';}
-document.getElementById('carrygoForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;const btn=form.querySelector('button[type=submit]');const msg=document.getElementById('formMsg');const result=document.getElementById('resultBox');const data=Object.fromEntries(new FormData(form).entries());const suggested=emailSuggestion(data.customer_email);if(suggested&&!confirm('이메일 도메인이 잘못 입력된 것 같습니다.\n\n입력: '+data.customer_email+'\n추천: '+suggested+'\n\n추천 이메일로 수정할까요?'))return;if(suggested){data.customer_email=suggested;document.getElementById('customerEmail').value=suggested}if(!confirmEmailBeforeSubmit(data.customer_email))return;data.action='create_reservation';btn.disabled=true;msg.textContent='신청 접수 중입니다...';msg.classList.remove('error');result.style.display='none';try{const res=await fetch(CARRYGO_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(data)});const out=await res.json();if(!out.ok)throw new Error(out.error||'submit failed');const r=out.reservation;result.innerHTML=`<h3>신청이 접수되었습니다.</h3><p>예약번호: <code>${r.reservation_id}</code></p><p>예약 시 결제: <b>${r.amount_display||paymentLabel(r.payment_method)}</b></p><p>결제기한: <b>${r.payment_due_at}</b></p><p>결제 안내메일을 확인해 주세요. 결제가 확인되면 예약 확정메일과 QR, 현장 안내가 발송됩니다.</p>`;result.style.display='block';msg.textContent='신청 완료. 결제 안내메일을 확인해 주세요. 결제가 확인되면 예약 확정메일과 QR이 발송됩니다.';form.reset();syncCountryCode();loadConcertDates();}catch(err){msg.textContent='접수 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요. / We could not submit your request. Please try again.';msg.classList.add('error');}finally{btn.disabled=false;}});
+document.getElementById('carrygoForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;const btn=form.querySelector('button[type=submit]');const msg=document.getElementById('formMsg');const result=document.getElementById('resultBox');const data=Object.fromEntries(new FormData(form).entries());const suggested=emailSuggestion(data.customer_email);if(suggested&&!confirm('이메일 도메인이 잘못 입력된 것 같습니다.\n\n입력: '+data.customer_email+'\n추천: '+suggested+'\n\n추천 이메일로 수정할까요?'))return;if(suggested){data.customer_email=suggested;document.getElementById('customerEmail').value=suggested}if(!confirmEmailBeforeSubmit(data.customer_email))return;data.action='create_reservation';btn.disabled=true;msg.textContent='신청 접수 중입니다...';msg.classList.remove('error');result.style.display='none';try{const res=await fetch(CARRYGO_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(data)});const out=await res.json();if(!out.ok)throw new Error(out.error||'submit failed');const r=out.reservation;result.innerHTML=`<h3>신청이 접수되었습니다.</h3><p>예약번호: <code>${r.reservation_id}</code></p><p>예약 시 결제: <b>${r.amount_display||paymentLabel(r.payment_method)}</b></p><p>결제기한: <b>${r.payment_due_at}</b></p><p>결제 안내메일을 확인해 주세요. 메일이 오지 않으면 스팸함을 먼저 확인하고, 이메일 오입력 시 신청서를 다시 작성하거나 hello@carrygo.kr 로 문의해 주세요.</p>`;result.style.display='block';msg.textContent='신청 완료. 결제 안내메일이 오지 않으면 스팸함을 확인하고, 이메일 오입력 시 다시 신청하거나 hello@carrygo.kr 로 문의해 주세요.';form.reset();syncCountryCode();loadConcertDates();}catch(err){msg.textContent='접수 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요. / We could not submit your request. Please try again.';msg.classList.add('error');}finally{btn.disabled=false;}});
 </script>
 </body>
 </html>
