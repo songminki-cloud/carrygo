@@ -1444,9 +1444,8 @@ function buildReservationConfirmedEmailHtmlFinal_(r) {
       <div style="font-size:20px;font-weight:bold;margin-top:12px;">${escapeHtmlFinal_(r.reservation_id)}</div>
     </div>
 
-    <p style="font-size:14px;">QR이 보이지 않으면 아래 버튼을 열어 주세요.<br/>If the QR code is not visible, please open the button below.</p>
-    <p style="margin:14px 0 8px;"><a href="${qrUrl}" target="_blank" style="display:inline-block;background:#111;color:#fff;text-decoration:none;font-weight:bold;padding:12px 16px;border-radius:999px;">QR 확인 링크 열기 / Open QR Link</a></p>
-    <p style="font-size:13px;color:#666;margin:6px 0 0;">링크가 열리지 않으면 예약번호 <b style="color:#111;">${escapeHtmlFinal_(r.reservation_id)}</b>를 현장 스태프에게 보여주세요.<br/>If the link does not open, show your reservation ID to the onsite staff.</p>
+    <p style="font-size:14px;">QR이 보이지 않으면 아래 링크를 열어 주세요.<br/>If the QR code is not visible, please open the link below.</p>
+    <p><a href="${qrUrl}" style="color:#111;word-break:break-all;">${qrUrl}</a></p>
 
     <hr style="border:none;border-top:1px solid #ddd;margin:24px 0;" />
 
