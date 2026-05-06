@@ -94,7 +94,11 @@ const RESERVATIONS_HEADERS = [
   'onsite_consent_flags',
   'actual_suitcase_count',
   'actual_extra_bag_count',
-  'onsite_due_amount'
+  'onsite_due_amount',
+  'onsite_cash_received',
+  'onsite_tag_attached',
+  'onsite_photo_taken',
+  'onsite_checkin_completed_at'
 ];
 
 const STAFF_HEADERS = [
@@ -521,7 +525,11 @@ function createReservationFinal(body) {
       onsite_consent_flags: '',
       actual_suitcase_count: '',
       actual_extra_bag_count: '',
-      onsite_due_amount: ''
+      onsite_due_amount: '',
+      onsite_cash_received: '',
+      onsite_tag_attached: '',
+      onsite_photo_taken: '',
+      onsite_checkin_completed_at: ''
     };
 
     validateReservationFinal_(rowObject);
@@ -577,6 +585,10 @@ function createWalkinReservationFinal(body) {
     const phoneFull = normalizePhoneFullFinal_(countryCode, phoneNumber);
     const tagNumbers = nextLuggageTagNumbersFinal_(suitcaseCount + extraBagCount, concert.concert_id);
     const consentFlags = 'HARDCOPY_CONFIRMED=' + String(body.hardcopy_confirmed || 'NO').trim().toUpperCase();
+    if (String(body.hardcopy_confirmed || '').trim().toUpperCase() !== 'YES') throw new Error('hardcopy confirmation is required');
+    if (String(body.onsite_cash_received || '').trim().toUpperCase() !== 'YES') throw new Error('cash received confirmation is required');
+    if (String(body.onsite_tag_attached || '').trim().toUpperCase() !== 'YES') throw new Error('tag attachment confirmation is required');
+    if (String(body.onsite_photo_taken || '').trim().toUpperCase() !== 'YES') throw new Error('photo confirmation is required');
 
     const rowObject = {
       reservation_id: reservationId,
@@ -628,7 +640,11 @@ function createWalkinReservationFinal(body) {
       onsite_consent_flags: consentFlags,
       actual_suitcase_count: suitcaseCount,
       actual_extra_bag_count: extraBagCount,
-      onsite_due_amount: paidAmount
+      onsite_due_amount: paidAmount,
+      onsite_cash_received: String(body.onsite_cash_received || 'NO').trim().toUpperCase(),
+      onsite_tag_attached: String(body.onsite_tag_attached || 'NO').trim().toUpperCase(),
+      onsite_photo_taken: String(body.onsite_photo_taken || 'NO').trim().toUpperCase(),
+      onsite_checkin_completed_at: now
     };
 
     const sh = getSheetFinal_(CARRYGO_SHEETS.RESERVATIONS);
@@ -1747,7 +1763,10 @@ function buildInlineStaffLoginHtmlFinal_(reservation, token) {
         <div id="onsiteDueBox" style="font-size:clamp(30px,6vw,54px);font-weight:950;letter-spacing:-.05em;">₩0</div>
         <div style="font-size:12px;color:#666;line-height:1.35;">첫 번째 캐리어 예약 결제분 제외. 추가 캐리어 ₩20,000 / 추가 짐 ₩10,000.</div>
       </div>
-      <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.35;color:#555;font-weight:800;margin-bottom:12px;"><input id="hardcopyInput" type="checkbox" style="width:auto;margin-top:2px;">하드카피 동의서 작성/서명 및 실제 수량 확인 완료</label>
+      <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.35;color:#555;font-weight:800;margin-bottom:10px;"><input id="hardcopyInput" type="checkbox" style="width:auto;margin-top:2px;">하드카피 동의서 작성/서명 및 실제 수량 확인 완료</label>
+      <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.35;color:#555;font-weight:800;margin-bottom:10px;"><input id="cashInput" type="checkbox" style="width:auto;margin-top:2px;">현장 추가금/현금 수납 완료</label>
+      <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.35;color:#555;font-weight:800;margin-bottom:10px;"><input id="tagInput" type="checkbox" style="width:auto;margin-top:2px;">러기지택 고객용/짐부착용 기재 및 부착 완료</label>
+      <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.35;color:#555;font-weight:800;margin-bottom:12px;"><input id="photoInput" type="checkbox" style="width:auto;margin-top:2px;">스태프폰 사진 촬영 완료 · 태그번호가 보이게 촬영</label>
       <div id="staffLoginBox">
         <input id="staffCodeInput" placeholder="Staff code" autocomplete="off" style="box-sizing:border-box;width:100%;font-size:clamp(20px,4vw,32px);padding:16px;border:1px solid #ccc;border-radius:10px;margin:0 0 12px;">
       </div>
@@ -1805,6 +1824,11 @@ function buildInlineStaffLoginHtmlFinal_(reservation, token) {
           msg.textContent = '하드카피 동의서 확인 체크가 필요합니다.';
           return;
         }
+        if (!document.getElementById('cashInput').checked || !document.getElementById('tagInput').checked || !document.getElementById('photoInput').checked) {
+          msg.style.color = '#b00020';
+          msg.textContent = '현금수납, 러기지택 부착, 사진촬영 완료 체크가 필요합니다.';
+          return;
+        }
         msg.style.color = '#555';
         msg.textContent = 'Saving...';
         const q = new URLSearchParams({
@@ -1814,7 +1838,10 @@ function buildInlineStaffLoginHtmlFinal_(reservation, token) {
           staff_session: CARRYGO_STAFF_SESSION,
           staff_code: document.getElementById('staffCodeInput') ? document.getElementById('staffCodeInput').value.trim() : '',
           actual_suitcase_count: document.getElementById('actualSuitcaseInput').value,
-          actual_extra_bag_count: document.getElementById('actualExtraInput').value
+          actual_extra_bag_count: document.getElementById('actualExtraInput').value,
+          onsite_cash_received: document.getElementById('cashInput').checked ? 'YES' : 'NO',
+          onsite_tag_attached: document.getElementById('tagInput').checked ? 'YES' : 'NO',
+          onsite_photo_taken: document.getElementById('photoInput').checked ? 'YES' : 'NO'
         });
         try {
           const data = await carryGoFetchJsonFinal(CARRYGO_WEBAPP_URL + '?' + q.toString());
@@ -1901,6 +1928,9 @@ function onsiteCheckinApiFinal_(params) {
         actual_extra_bag_count: r.actual_extra_bag_count || r.expected_extra_bag_count || '',
         onsite_due_amount: r.onsite_due_amount || 0,
         onsite_due_display: '₩' + Number(r.onsite_due_amount || 0).toLocaleString('ko-KR'),
+        onsite_cash_received: r.onsite_cash_received || '',
+        onsite_tag_attached: r.onsite_tag_attached || '',
+        onsite_photo_taken: r.onsite_photo_taken || '',
         picked_up_by: r.picked_up_by || '',
         picked_up_at: formatDateTimeMaybeFinal_(r.picked_up_at)
       });
@@ -1908,6 +1938,10 @@ function onsiteCheckinApiFinal_(params) {
     if (String(r.status || '') !== 'CONFIRMED' || String(r.payment_status || '') !== 'PAID') {
       throw new Error('Reservation is not confirmed/paid yet.');
     }
+
+    if (String(params.onsite_cash_received || '').toUpperCase() !== 'YES') throw new Error('Cash collection confirmation is required.');
+    if (String(params.onsite_tag_attached || '').toUpperCase() !== 'YES') throw new Error('Luggage tag attachment confirmation is required.');
+    if (String(params.onsite_photo_taken || '').toUpperCase() !== 'YES') throw new Error('Photo confirmation is required.');
 
     const actualSuitcase = normalizeCountFinal_(params.actual_suitcase_count || r.expected_suitcase_count, 1);
     const actualExtra = normalizeCountFinal_(params.actual_extra_bag_count || r.expected_extra_bag_count, 0);
@@ -1923,6 +1957,11 @@ function onsiteCheckinApiFinal_(params) {
     setReservationValueFinal_(sh, rowNo, 'actual_suitcase_count', actualSuitcase);
     setReservationValueFinal_(sh, rowNo, 'actual_extra_bag_count', actualExtra);
     setReservationValueFinal_(sh, rowNo, 'onsite_due_amount', onsiteDue);
+    setReservationValueFinal_(sh, rowNo, 'onsite_cash_received', 'YES');
+    setReservationValueFinal_(sh, rowNo, 'onsite_tag_attached', 'YES');
+    setReservationValueFinal_(sh, rowNo, 'onsite_photo_taken', 'YES');
+    setReservationValueFinal_(sh, rowNo, 'onsite_checkin_completed_at', now);
+    setReservationValueFinal_(sh, rowNo, 'onsite_payment_method', onsiteDue > 0 ? 'CASH' : 'NONE');
     setReservationValueFinal_(sh, rowNo, 'luggage_tag_numbers', tags);
     setReservationValueFinal_(sh, rowNo, 'onsite_staff', staff.staff_id || staff.staff_name || '');
     setReservationValueFinal_(sh, rowNo, 'onsite_consent_flags', mergeNoteFinal_(r.onsite_consent_flags || '', 'HARDCOPY_CONFIRMED=YES; ONSITE_CHECKIN_BY=' + (staff.staff_id || staff.staff_name || 'STAFF')));
@@ -1941,6 +1980,9 @@ function onsiteCheckinApiFinal_(params) {
       actual_extra_bag_count: actualExtra,
       onsite_due_amount: onsiteDue,
       onsite_due_display: '₩' + Number(onsiteDue || 0).toLocaleString('ko-KR'),
+      onsite_cash_received: 'YES',
+      onsite_tag_attached: 'YES',
+      onsite_photo_taken: 'YES',
       picked_up_by: staff.staff_id || staff.staff_name || 'STAFF',
       picked_up_at: formatDateTimeFinal_(now)
     });
@@ -2517,6 +2559,10 @@ function adminReservationSummaryFinal_(row) {
     booking_channel: row.booking_channel,
     luggage_tag_numbers: row.luggage_tag_numbers,
     onsite_due_amount: row.onsite_due_amount,
+    onsite_cash_received: row.onsite_cash_received,
+    onsite_tag_attached: row.onsite_tag_attached,
+    onsite_photo_taken: row.onsite_photo_taken,
+    onsite_checkin_completed_at: formatDateTimeMaybeFinal_(row.onsite_checkin_completed_at),
     actual_suitcase_count: row.actual_suitcase_count,
     actual_extra_bag_count: row.actual_extra_bag_count,
     expected_suitcase_count: row.expected_suitcase_count,

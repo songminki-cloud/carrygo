@@ -34,10 +34,13 @@
       <div class="small">현장 현금 결제금액</div><div class="amount" id="amount">₩20,000</div>
 
       <label class="q"><input type="checkbox" name="hardcopy_confirmed" value="YES" required> 하드카피 보관 동의서 작성/서명 확인 완료</label>
+      <label class="q"><input type="checkbox" name="onsite_cash_received" value="YES" required> 현금 수납 완료</label>
+      <label class="q"><input type="checkbox" name="onsite_tag_attached" value="YES" required> 러기지택 고객용/짐부착용 기재 및 부착 완료</label>
+      <label class="q"><input type="checkbox" name="onsite_photo_taken" value="YES" required> 스태프폰 사진 촬영 완료 · 태그번호가 보이게 촬영</label>
       <label class="label">Note</label><textarea name="note" placeholder="특이사항 / YES 항목 메모"></textarea>
       <button class="btn" type="submit">현장접수 저장</button>
       <div class="result" id="result"></div>
-      <p class="small" id="msg">저장 후 러기지택 부착, 사진 촬영, 현금 수납을 완료하세요.</p>
+      <p class="small" id="msg">현금 수납, 러기지택 부착, 사진 촬영 후 저장하세요.</p>
     </form>
   </section>
 </main>
