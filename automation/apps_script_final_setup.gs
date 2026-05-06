@@ -1069,88 +1069,59 @@ function sendPaymentInstructionEmailFinal_(reservation) {
 
 function buildPaymentInstructionEmailBodyFinal_(r) {
   const paymentBlock = buildPaymentInstructionEmailPaymentBlockFinal_(r);
+  const amount = formatAmountDisplayFinal_(r);
 
   return [
-    '안녕하세요. CarryGo입니다.',
+    '[예약 확정 전입니다]',
     '',
-    '신청이 접수되었습니다.',
-    '예약 확정을 위해 아래 안내에 따라 기본 이용료 / Base Fee를 결제해 주세요.',
+    '예약을 확정하려면 지금 ' + amount + '을 결제해 주세요.',
+    '결제 확인 후 QR 코드와 픽드랍 안내 링크를 이메일로 보내드립니다.',
     '',
-    '예약번호: ' + r.reservation_id,
-    '콘서트: ' + r.concert_title,
-    '공연일: ' + r.concert_date + ' ' + r.concert_time,
-    '장소: ' + r.venue,
-    '짐 맡기는 시간: ' + (r.pickup_time || '') + ' (선택 시간 30분 전부터 정시까지 도착)',
+    '결제금액: ' + amount,
+    '결제방법: ' + paymentBlock.methodLabel,
+    '송금메모: ' + r.reservation_id,
     '',
-    '기본 이용료 / Base Fee:',
-    formatAmountDisplayFinal_(r),
-    '',
-    '포함 사항:',
-    '- 캐리어 1개',
-    '- 선택한 시간에 짐 맡기기',
-    '- 공연 종료 후 2시간 이내 수령',
-    '- 최대 28인치 / 23kg 이하',
-    '',
-    '결제 방법:',
     paymentBlock.ko,
     '',
-    '결제 시 송금 메모 또는 결제 메모에 예약번호 ' + r.reservation_id + '를 입력해 주세요.',
-    '입금 확인 후 예약이 확정됩니다.',
+    paymentBlock.noticeKo,
+    '',
+    '예약 정보',
+    '- 예약번호: ' + r.reservation_id,
+    '- 콘서트: ' + r.concert_title,
+    '- 공연일: ' + r.concert_date + ' ' + r.concert_time,
+    '- 장소: ' + r.venue,
+    '- 짐 맡기는 시간: ' + (r.pickup_time || '') + ' (선택 시간 30분 전부터 정시까지)',
+    '',
+    '포함 사항: 캐리어 1개 / 선택 시간 짐 맡기기 / 공연 종료 후 2시간 이내 수령',
     '',
     '신청 후 6시간 이내 결제가 확인되지 않으면 신청이 취소될 수 있습니다.',
-    '예약이 확정되면 QR 코드와 픽드랍 안내 링크를 이메일로 보내드립니다.',
-    '',
-    '추가 짐이 있는 경우 현장에서 현금으로 결제해 주세요.',
-    '- 추가 가방/쇼핑백 1개당 ₩10,000',
-    '- 한화가 없을 경우 1개당 $10 현금 결제 가능',
-    '- 현장 환율 계산 없음',
-    '',
+    '추가 짐은 현장에서 현금 결제입니다. 추가 가방·쇼핑백 1개당 ₩10,000 / 한화가 없으면 $10.',
     '결제 후 고객 변심 취소 및 노쇼는 환불되지 않습니다.',
-    '공연 취소 또는 CarryGo 운영 사정으로 서비스 제공이 불가한 경우 전액 환불됩니다.',
     '',
-    '감사합니다.',
     'CarryGo',
     '',
     '---',
     '',
-    'Hello, this is CarryGo.',
+    '[Payment Required]',
     '',
-    'Your request has been received.',
-    'To confirm your reservation, please pay the Base Fee using the payment instructions below.',
+    'To confirm your reservation, please pay ' + amount + ' now.',
+    'After payment is verified, we will email your QR code and pickup & drop guide link.',
     '',
-    'Reservation ID: ' + r.reservation_id,
-    'Concert: ' + r.concert_title,
-    'Date & Time: ' + r.concert_date + ' ' + r.concert_time,
-    'Venue: ' + r.venue,
-    'Drop-off Time: ' + (r.pickup_time || '') + ' (Please arrive from 30 minutes before until the selected time)',
+    'Amount: ' + amount,
+    'Payment method: ' + paymentBlock.methodLabel,
+    'Payment note: ' + r.reservation_id,
     '',
-    'Base Fee:',
-    formatAmountDisplayFinal_(r),
-    '',
-    'Included:',
-    '- 1 suitcase',
-    '- Luggage drop-off at your selected time',
-    '- Pickup within 2 hours after the concert ends',
-    '- Up to 28 inches / 23kg',
-    '',
-    'Payment method:',
     paymentBlock.en,
     '',
-    'Please enter your Reservation ID ' + r.reservation_id + ' in the payment note or transfer memo.',
-    'Your reservation will be confirmed after payment is verified.',
+    paymentBlock.noticeEn,
     '',
-    'If payment is not confirmed within 6 hours after submission, your request may be cancelled.',
-    'Once confirmed, we will email you your QR code and pickup & drop guide link.',
+    'Reservation Info',
+    '- Reservation ID: ' + r.reservation_id,
+    '- Concert: ' + r.concert_title,
+    '- Date & Time: ' + r.concert_date + ' ' + r.concert_time,
+    '- Venue: ' + r.venue,
+    '- Drop-off Time: ' + (r.pickup_time || '') + ' (from 30 minutes before until the selected time)',
     '',
-    'If you have extra bags, please pay onsite in cash.',
-    '- ₩10,000 per additional bag/shopping bag',
-    '- If you do not have KRW cash, you may pay $10 cash per item',
-    '- We do not calculate exchange rates onsite',
-    '',
-    'Customer cancellations and no-shows are non-refundable after payment.',
-    'If the concert is cancelled or CarryGo cannot provide the service due to operational reasons, a full refund will be provided.',
-    '',
-    'Thank you.',
     'CarryGo'
   ].join('\n');
 }
@@ -1162,22 +1133,15 @@ function buildPaymentInstructionEmailPaymentBlockFinal_(r) {
   if (method === 'KAKAOPAY') {
     const link = 'https://qr.kakaopay.com/FOzMisaMr';
     return {
+      methodLabel: 'KakaoPay',
+      noticeKo: '※ 카카오페이는 링크를 눌러도 금액이 자동 입력되지 않을 수 있습니다. 송금 화면에서 반드시 ₩20,000을 직접 입력하고, 송금 메모에 예약번호 ' + reservationId + '를 입력해 주세요.',
+      noticeEn: '※ KakaoPay may not auto-fill the amount. Please enter ₩20,000 manually and add your Reservation ID ' + reservationId + ' in the transfer memo.',
       ko: [
-        'KakaoPay',
-        '결제금액: ₩20,000',
-        '송금 메모: ' + reservationId,
-        '',
-        'PC에서 보고 있다면 QR 코드를 휴대폰 카카오페이로 스캔해 주세요.',
-        '모바일에서는 아래 링크를 눌러 송금해 주세요.',
+        '카카오페이 송금 링크:',
         link
       ].join('\n'),
       en: [
-        'KakaoPay',
-        'Amount: ₩20,000',
-        'Transfer memo: ' + reservationId,
-        '',
-        'If you are viewing this email on a PC, please scan the QR code with KakaoPay on your phone.',
-        'If you are on mobile, please use the link below.',
+        'KakaoPay link:',
         link
       ].join('\n')
     };
@@ -1186,16 +1150,15 @@ function buildPaymentInstructionEmailPaymentBlockFinal_(r) {
   if (method === 'PAYPAL') {
     const link = getScriptPropertyFinal_('PAYPAL_LINK') || '{{paypal_link}}';
     return {
+      methodLabel: 'PayPal',
+      noticeKo: '※ 결제 메모에 예약번호 ' + reservationId + '를 입력해 주세요.',
+      noticeEn: '※ Please add your Reservation ID ' + reservationId + ' in the payment note.',
       ko: [
-        'PayPal',
-        '결제금액: $15',
-        'Payment note: ' + reservationId,
+        'PayPal 결제 링크:',
         link
       ].join('\n'),
       en: [
-        'PayPal',
-        'Amount: $15',
-        'Payment note: ' + reservationId,
+        'PayPal link:',
         link
       ].join('\n')
     };
@@ -1205,6 +1168,9 @@ function buildPaymentInstructionEmailPaymentBlockFinal_(r) {
     const accountNo = getScriptPropertyFinal_('BANK_ACCOUNT_NO') || '{{bank_account}}';
     const holder = getScriptPropertyFinal_('BANK_ACCOUNT_HOLDER') || '{{account_holder}}';
     return {
+      methodLabel: 'Bank Transfer',
+      noticeKo: '※ 송금 메모에 예약번호 ' + reservationId + '를 입력해 주세요.',
+      noticeEn: '※ Please add your Reservation ID ' + reservationId + ' in the transfer memo.',
       ko: [
         '계좌이체 / Bank Transfer',
         '결제금액: ₩20,000',
@@ -1226,7 +1192,7 @@ function buildPaymentInstructionEmailPaymentBlockFinal_(r) {
     };
   }
 
-  return { ko: method, en: method };
+  return { methodLabel: method, noticeKo: '', noticeEn: '', ko: method, en: method };
 }
 
 function formatAmountDisplayFinal_(r) {
