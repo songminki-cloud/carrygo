@@ -315,6 +315,10 @@ function doGet(e) {
       return onsiteCheckinApiFinal_(params);
     }
 
+    if (mode === 'onsite_lookup_api') {
+      return onsiteLookupApiFinal_(params);
+    }
+
 
     if (mode === 'staff_session_api') {
       return staffSessionApiFinal_(params);
@@ -1401,9 +1405,8 @@ function buildReservationConfirmedEmailBodyFinal_(r) {
 }
 
 function buildCheckinUrlFinal_(reservationId, token) {
-  const webAppUrl = getScriptPropertyFinal_('WEB_APP_URL') || ScriptApp.getService().getUrl() || '';
-  if (!webAppUrl) return 'WEB_APP_URL_NOT_SET?mode=checkin&id=' + encodeURIComponent(reservationId) + '&token=' + encodeURIComponent(token);
-  return webAppUrl + '?mode=checkin&id=' + encodeURIComponent(reservationId) + '&token=' + encodeURIComponent(token);
+  const adminUrl = getScriptPropertyFinal_('ADMIN_CHECKIN_URL') || 'https://songminki-cloud.github.io/carrygo/admin.html';
+  return adminUrl + '?mode=checkin&id=' + encodeURIComponent(reservationId) + '&token=' + encodeURIComponent(token);
 }
 
 function createQrPngBlobFinal_(text, reservationId) {
@@ -1919,6 +1922,21 @@ function formatDateTimeMaybeFinal_(value) {
   return String(value);
 }
 
+
+
+function onsiteLookupApiFinal_(params) {
+  try {
+    const reservationId = String(params.id || '').trim();
+    const token = String(params.token || '').trim();
+    if (!reservationId || !token) throw new Error('Missing QR information.');
+    const rowNo = findReservationRowFinal_(reservationId);
+    const r = getReservationObjectByRowFinal_(rowNo);
+    if (String(r.checkin_token || '') !== token) throw new Error('Invalid or expired QR code.');
+    return jsonFinal_({ ok: true, reservation: adminReservationSummaryFinal_(r) });
+  } catch (err) {
+    return jsonFinal_({ ok: false, error: String(err && err.message ? err.message : err) });
+  }
+}
 
 
 function onsiteCheckinApiFinal_(params) {
