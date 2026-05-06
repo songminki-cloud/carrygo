@@ -304,6 +304,10 @@ function doGet(e) {
       return pickupCompleteApiFinal_(params);
     }
 
+    if (mode === 'assign_luggage_tags_api') {
+      return assignLuggageTagsApiFinal_(params);
+    }
+
     if (mode === 'staff_session_api') {
       return staffSessionApiFinal_(params);
     }
@@ -1338,8 +1342,14 @@ function buildReservationConfirmedEmailBodyFinal_(r) {
 
 function buildCheckinUrlFinal_(reservationId, token) {
   const webAppUrl = getScriptPropertyFinal_('WEB_APP_URL') || ScriptApp.getService().getUrl() || '';
+  const assignUrl = buildAssignTagPageUrlFinal_(reservationId);
   if (!webAppUrl) return 'WEB_APP_URL_NOT_SET?mode=checkin&id=' + encodeURIComponent(reservationId) + '&token=' + encodeURIComponent(token);
-  return webAppUrl + '?mode=checkin&id=' + encodeURIComponent(reservationId) + '&token=' + encodeURIComponent(token);
+  return webAppUrl + '?mode=checkin&id=' + encodeURIComponent(reservationId) + '&token=' + encodeURIComponent(token) + '&assign=' + encodeURIComponent(assignUrl);
+}
+
+function buildAssignTagPageUrlFinal_(reservationId) {
+  const base = getScriptPropertyFinal_('PUBLIC_SITE_URL') || 'https://songminki-cloud.github.io/carrygo';
+  return String(base).replace(/\/$/, '') + '/tag.html?id=' + encodeURIComponent(reservationId || '');
 }
 
 function createQrPngBlobFinal_(text, reservationId) {
@@ -1922,6 +1932,35 @@ function formatDateTimeMaybeFinal_(value) {
     return formatDateTimeFinal_(value);
   }
   return String(value);
+}
+
+
+function assignLuggageTagsApiFinal_(params) {
+  try {
+    const reservationId = String(params.id || params.reservation_id || '').trim();
+    if (!reservationId) throw new Error('reservation_id is required');
+    const staffSession = String(params.staff_session || '').trim();
+    let staff = validateStaffSessionFinal_(staffSession);
+    if (!staff && params.staff_code) staff = findStaffByCodeFinal_(params.staff_code);
+    if (!staff) throw new Error('Invalid staff session or staff code');
+
+    const rowNo = findReservationRowFinal_(reservationId);
+    const row = getReservationObjectByRowFinal_(rowNo);
+    const existing = String(row.luggage_tag_numbers || '').trim();
+    if (existing && String(params.force || '').toUpperCase() !== 'TRUE') {
+      return jsonFinal_({ ok: true, already_assigned: true, reservation_id: reservationId, luggage_tag_numbers: existing });
+    }
+
+    const count = Math.max(1, Number(row.expected_suitcase_count || 0) + Number(row.expected_extra_bag_count || 0));
+    const tags = nextLuggageTagNumbersFinal_(count);
+    const sh = getSheetFinal_(CARRYGO_SHEETS.RESERVATIONS);
+    setReservationValueFinal_(sh, rowNo, 'luggage_tag_numbers', tags);
+    setReservationValueFinal_(sh, rowNo, 'onsite_staff', staff.staff_id || staff.staff_name || '');
+    setReservationValueFinal_(sh, rowNo, 'onsite_consent_flags', mergeNoteFinal_(row.onsite_consent_flags || '', 'HARDCOPY_CONFIRMED=YES; TAG_ASSIGNED_BY=' + (staff.staff_id || staff.staff_name || 'STAFF')));
+    return jsonFinal_({ ok: true, reservation_id: reservationId, luggage_tag_numbers: tags, count: count, staff_id: staff.staff_id || '' });
+  } catch (err) {
+    return jsonFinal_({ ok: false, error: String(err && err.message ? err.message : err) });
+  }
 }
 
 function staffSessionApiFinal_(params) {
