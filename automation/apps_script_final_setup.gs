@@ -319,6 +319,10 @@ function doGet(e) {
       return onsiteLookupApiFinal_(params);
     }
 
+    if (mode === 'admin_normalize_luggage_tags') {
+      return adminNormalizeLuggageTagsApiFinal_(params);
+    }
+
 
     if (mode === 'staff_session_api') {
       return staffSessionApiFinal_(params);
@@ -680,6 +684,18 @@ function normalizeLuggageTagNumberFinal_(value) {
   const digits = String(value || '').replace(/[^0-9]/g, '');
   if (!digits) return 0;
   return Number(digits.slice(-3));
+}
+
+function normalizeLuggageTagStringFinal_(value) {
+  return String(value || '')
+    .split(/[,\s]+/)
+    .map(part => String(part || '').trim())
+    .filter(Boolean)
+    .map(part => {
+      const digits = String(part || '').replace(/[^0-9]/g, '');
+      return digits ? digits.slice(-3).padStart(3, '0') : part;
+    })
+    .join(',');
 }
 
 function nextLuggageTagNumbersFinal_(count, concertId) {
@@ -1930,6 +1946,30 @@ function formatDateTimeMaybeFinal_(value) {
 
 
 
+function adminNormalizeLuggageTagsApiFinal_(params) {
+  try {
+    validateAdminPinFinal_(params.admin_pin);
+    const sh = getSheetFinal_(CARRYGO_SHEETS.RESERVATIONS);
+    const values = sh.getDataRange().getValues();
+    const tagCol = RESERVATIONS_HEADERS.indexOf('luggage_tag_numbers') + 1;
+    const ridCol = RESERVATIONS_HEADERS.indexOf('reservation_id');
+    const changed = [];
+    for (let i = 1; i < values.length; i++) {
+      const current = String(values[i][tagCol - 1] || '').trim();
+      if (!current) continue;
+      const normalized = normalizeLuggageTagStringFinal_(current);
+      if (normalized && normalized !== current) {
+        sh.getRange(i + 1, tagCol).setValue(normalized);
+        changed.push({ row: i + 1, reservation_id: values[i][ridCol], before: current, after: normalized });
+      }
+    }
+    return jsonFinal_({ ok: true, changed_count: changed.length, changed: changed });
+  } catch (err) {
+    return jsonFinal_({ ok: false, error: String(err && err.message ? err.message : err) });
+  }
+}
+
+
 function onsiteLookupApiFinal_(params) {
   try {
     const reservationId = String(params.id || '').trim();
@@ -1938,6 +1978,12 @@ function onsiteLookupApiFinal_(params) {
     const rowNo = findReservationRowFinal_(reservationId);
     const r = getReservationObjectByRowFinal_(rowNo);
     if (String(r.checkin_token || '') !== token) throw new Error('Invalid or expired QR code.');
+    const normalizedTags = normalizeLuggageTagStringFinal_(r.luggage_tag_numbers || '');
+    if (normalizedTags && normalizedTags !== String(r.luggage_tag_numbers || '').trim()) {
+      const sh = getSheetFinal_(CARRYGO_SHEETS.RESERVATIONS);
+      setReservationValueFinal_(sh, rowNo, 'luggage_tag_numbers', normalizedTags);
+      r.luggage_tag_numbers = normalizedTags;
+    }
     return jsonFinal_({ ok: true, reservation: adminReservationSummaryFinal_(r) });
   } catch (err) {
     return jsonFinal_({ ok: false, error: String(err && err.message ? err.message : err) });
@@ -1972,7 +2018,7 @@ function onsiteCheckinApiFinal_(params) {
         already_assigned: true,
         reservation_id: reservationId,
         status: 'PICKED_UP',
-        luggage_tag_numbers: String(r.luggage_tag_numbers || '').trim(),
+        luggage_tag_numbers: normalizeLuggageTagStringFinal_(r.luggage_tag_numbers || ''),
         actual_suitcase_count: r.actual_suitcase_count || r.expected_suitcase_count || '',
         actual_extra_bag_count: r.actual_extra_bag_count || r.expected_extra_bag_count || '',
         onsite_due_amount: r.onsite_due_amount || 0,
@@ -1996,7 +2042,7 @@ function onsiteCheckinApiFinal_(params) {
     const actualExtra = normalizeCountFinal_(params.actual_extra_bag_count || r.expected_extra_bag_count, 0);
     if (actualSuitcase < 1) throw new Error('actual_suitcase_count must be at least 1');
     const onsiteDue = Math.max(0, actualSuitcase - 1) * 20000 + actualExtra * 10000;
-    const existingTags = String(r.luggage_tag_numbers || '').trim();
+    const existingTags = normalizeLuggageTagStringFinal_(r.luggage_tag_numbers || '');
     const tags = existingTags || nextLuggageTagNumbersFinal_(actualSuitcase + actualExtra, r.concert_id);
 
     const sh = getSheetFinal_(CARRYGO_SHEETS.RESERVATIONS);
