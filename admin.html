@@ -214,16 +214,26 @@ async function loadList(){if(!pin()){setAuthMsg('PIN을 입력하세요.');retur
 function rowHtml(r, extraClass=''){
   const tags=esc(r.luggage_tag_numbers||'-');
   const due=Number(r.onsite_due_amount||0);
+  const status=String(r.payment_status||'').toUpperCase();
   const chips=[`<span class="chip important">${esc(r.payment_method||'결제수단')}</span>`, `<span class="chip">${esc(r.amount_display||'')}</span>`];
-  if(currentTab!=='return')chips.push(`<span class="chip">태그 ${tags}</span>`);
-  if(r.payment_status)chips.push(`<span class="chip">${esc(r.payment_status)}</span>`);
-  if(currentTab!=='return'&&r.payment_due_at)chips.push(`<span class="chip ${r.is_payment_expired?'warn':''}">기한 ${esc(r.payment_due_at)}</span>`);
-  if(due)chips.push(`<span class="chip warn">현장 ${money(due)}</span>`);
-  const opsChips=currentTab==='return'?[]:[`<span class="ops-chip ${r.onsite_cash_received==='YES'?'done':''}">현금수납</span>`,`<span class="ops-chip ${r.onsite_photo_taken==='YES'?'done':''}">사진</span>`];
-  const opsHtml=opsChips.length?`<div class="ops-chips">${opsChips.join('')}</div>`:'';
-  return `<label class="row pick-row"><input type="checkbox" class="pick ${extraClass}" value="${esc(r.reservation_id)}"><div class="row-main"><div class="row-line"><div class="rid">${esc(r.reservation_id)}</div><div class="small">${esc(r.status||statusForTab())}</div></div><div class="meta"><b>${esc(r.customer_name)}</b> · ${esc(r.customer_email)}<br>${esc(r.concert_date)} ${esc(koreanTime(r.concert_time))} · 짐 맡기는 시간 ${esc(koreanTime(r.pickup_time)||'-')}<br>캐리어 ${esc(r.actual_suitcase_count||r.expected_suitcase_count||'-')} · 추가 짐 ${esc(r.actual_extra_bag_count||r.expected_extra_bag_count||'0')}${r.picked_up_by?' · Staff '+esc(r.picked_up_by):''}</div><div class="chips">${chips.join('')}</div>${opsHtml}</div></label>`
-}
-function renderRows(rows){
+  if(currentTab==='payment'||currentTab==='cancel'){
+    if(r.payment_due_at)chips.push(`<span class="chip ${r.is_payment_expired?'warn':''}">기한 ${esc(r.payment_due_at)}</span>`);
+  }
+  if(currentTab==='return'||currentTab==='refund'){
+    if(status)chips.push(`<span class="chip">${esc(status)}</span>`);
+  }
+  if(currentTab!=='payment'&&currentTab!=='return'&&currentTab!=='cancel'&&currentTab!=='refund')chips.push(`<span class="chip">태그 ${tags}</span>`);
+  if(currentTab==='return'&&due)chips.push(`<span class="chip warn">현장 ${money(due)}</span>`);
+  const dateLine=`${esc(r.concert_date)} ${esc(koreanTime(r.concert_time))}`;
+  const countLine=`캐리어 ${esc(r.actual_suitcase_count||r.expected_suitcase_count||'-')} · 추가 짐 ${esc(r.actual_extra_bag_count||r.expected_extra_bag_count||'0')}`;
+  let metaLines=[];
+  if(currentTab==='payment')metaLines=[`<b>${esc(r.customer_name)}</b> · ${esc(r.customer_email)}`,dateLine];
+  else if(currentTab==='return')metaLines=[`<b>${esc(r.customer_name)}</b> · ${esc(r.customer_email)}`,`${dateLine} · 짐 맡기는 시간 ${esc(koreanTime(r.pickup_time)||'-')}`,`${countLine}${r.picked_up_by?' · Staff '+esc(r.picked_up_by):''}`];
+  else if(currentTab==='cancel')metaLines=[`<b>${esc(r.customer_name)}</b> · ${esc(r.customer_email)}`,dateLine];
+  else if(currentTab==='refund')metaLines=[`<b>${esc(r.customer_name)}</b> · ${esc(r.customer_email)}`,`${dateLine}${r.cancelled_at?' · 취소 '+esc(r.cancelled_at):''}`];
+  else metaLines=[`<b>${esc(r.customer_name)}</b> · ${esc(r.customer_email)}`,`${dateLine} · 짐 맡기는 시간 ${esc(koreanTime(r.pickup_time)||'-')}`,countLine];
+  return `<label class="row pick-row"><input type="checkbox" class="pick ${extraClass}" value="${esc(r.reservation_id)}"><div class="row-main"><div class="row-line"><div class="rid">${esc(r.reservation_id)}</div><div class="small">${esc(r.status||statusForTab())}</div></div><div class="meta">${metaLines.join('<br>')}</div><div class="chips">${chips.join('')}</div></div></label>`
+}function renderRows(rows){
   if(!rows.length){listEl.innerHTML='<div class="empty-state">'+esc((tabCopy[currentTab]||tabCopy.payment).empty)+'</div>';return}
   if(currentTab==='payment'){
     const active=rows.filter(r=>!r.is_payment_expired);
