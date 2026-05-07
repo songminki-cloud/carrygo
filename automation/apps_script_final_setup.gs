@@ -2372,10 +2372,14 @@ function adminConfirmPaymentApiFinal_(params) {
       try {
         const rowNo = findReservationRowFinal_(reservationId);
         const row = getReservationObjectByRowFinal_(rowNo);
-        if (String(row.status || '') === 'CONFIRMED') {
+        const currentStatus = String(row.status || '').toUpperCase();
+        const paymentStatus = String(row.payment_status || '').toUpperCase();
+        if (currentStatus === 'CONFIRMED' && paymentStatus === 'PAID') {
           confirmed.push(reservationId);
           return;
         }
+        if (currentStatus !== 'UNPAID') throw new Error('UNPAID 상태만 입금확인 처리할 수 있습니다: ' + reservationId);
+        if (paymentStatus === 'PAID' || paymentStatus === 'REFUNDED') throw new Error('이미 결제 처리된 예약입니다: ' + reservationId);
         const paidAmount = row.base_fee || '';
         confirmPaymentFinal(reservationId, paidAmount);
         confirmed.push(reservationId);
@@ -2518,6 +2522,13 @@ function adminListByStatusApiFinal_(params) {
     const rows = readSheetObjectsFinal_(CARRYGO_SHEETS.RESERVATIONS, RESERVATIONS_HEADERS);
     const reservations = rows
       .filter(row => String(row.status || '').toUpperCase() === status)
+      .filter(row => {
+        const paymentStatus = String(row.payment_status || '').toUpperCase();
+        if (status === 'CANCELLED') return paymentStatus === 'PAID' && !row.refunded_at;
+        if (status === 'PICKED_UP') return paymentStatus === 'PAID';
+        if (status === 'UNPAID') return paymentStatus !== 'PAID' && paymentStatus !== 'REFUNDED';
+        return true;
+      })
       .slice(-100)
       .reverse()
       .map(row => adminReservationSummaryFinal_(row));
@@ -2539,6 +2550,16 @@ function adminUpdateStatusApiFinal_(params) {
     ids.forEach(reservationId => {
       const rowNo = findReservationRowFinal_(reservationId);
       const row = getReservationObjectByRowFinal_(rowNo);
+      const currentStatus = String(row.status || '').toUpperCase();
+      const paymentStatus = String(row.payment_status || '').toUpperCase();
+      if (nextStatus === 'RETURNED') {
+        if (currentStatus !== 'PICKED_UP') throw new Error('PICKED_UP 상태만 수령완료 처리할 수 있습니다: ' + reservationId);
+        if (paymentStatus !== 'PAID') throw new Error('결제완료 예약만 수령완료 처리할 수 있습니다: ' + reservationId);
+      }
+      if (nextStatus === 'CANCELLED') {
+        if (currentStatus !== 'UNPAID') throw new Error('UNPAID 상태만 예약취소 처리할 수 있습니다: ' + reservationId);
+        if (paymentStatus === 'PAID' || paymentStatus === 'REFUNDED') throw new Error('결제완료 예약은 예약취소 탭에서 취소할 수 없습니다: ' + reservationId);
+      }
       const sh = getSheetFinal_(CARRYGO_SHEETS.RESERVATIONS);
       const now = new Date();
       setReservationValueFinal_(sh, rowNo, 'status', nextStatus);
@@ -2569,12 +2590,19 @@ function adminRefundApiFinal_(params) {
     const updated = [];
     ids.forEach(reservationId => {
       const rowNo = findReservationRowFinal_(reservationId);
+      const row = getReservationObjectByRowFinal_(rowNo);
+      const currentStatus = String(row.status || '').toUpperCase();
+      const paymentStatus = String(row.payment_status || '').toUpperCase();
+      if (currentStatus !== 'CANCELLED') throw new Error('CANCELLED 상태만 환불기록할 수 있습니다: ' + reservationId);
+      if (paymentStatus !== 'PAID') throw new Error('결제완료 취소건만 환불기록할 수 있습니다: ' + reservationId);
+      if (row.refunded_at) throw new Error('이미 환불기록된 예약입니다: ' + reservationId);
       const sh = getSheetFinal_(CARRYGO_SHEETS.RESERVATIONS);
       const now = new Date();
       setReservationValueFinal_(sh, rowNo, 'refunded_at', now);
       setReservationValueFinal_(sh, rowNo, 'refund_amount', refundAmount);
       setReservationValueFinal_(sh, rowNo, 'refund_method', refundMethod);
       setReservationValueFinal_(sh, rowNo, 'refund_note', refundNote);
+      setReservationValueFinal_(sh, rowNo, 'payment_status', 'REFUNDED');
       updated.push(reservationId);
     });
     return jsonFinal_({ ok: true, updated: updated });
@@ -2773,6 +2801,8 @@ function adminReservationSummaryFinal_(row) {
     expected_suitcase_count: row.expected_suitcase_count,
     expected_extra_bag_count: row.expected_extra_bag_count,
     payment_method: row.payment_method,
+    payment_status: row.payment_status,
+    paid_at: formatDateTimeMaybeFinal_(row.paid_at),
     amount_display: String(row.currency || '').toUpperCase() === 'USD' ? '$' + row.base_fee : '₩' + Number(row.base_fee || 0).toLocaleString('ko-KR'),
     payment_due_at: formatDateTimeMaybeFinal_(row.payment_due_at),
     picked_up_at: formatDateTimeMaybeFinal_(row.picked_up_at),
