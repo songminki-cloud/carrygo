@@ -93,7 +93,7 @@
         <div class="due-box mt12">
           <div class="label mt0">현장 추가 결제금액</div>
           <div id="checkDue" class="bigvalue">₩0</div>
-          <div class="help">기본요금에 포함된 캐리어 1개 제외. 추가 캐리어 20,000원 / 캐리어 외 추가 짐 10,000원.</div>
+          <div class="help">기본요금에 포함된 캐리어 1개 제외. 추가 캐리어 20,000원 / 추가 짐 10,000원. 추가 짐: 닫히는 가방만. 쇼핑백/비닐봉투 불가.</div>
         </div>
         <div class="check-note mt12">
           <strong>태그번호 발급 후 안내</strong><br>
@@ -139,7 +139,7 @@ function renderRows(rows){
     if(due)chips.push(`<span class="chip warn">현장 ${money(due)}</span>`);
     if(r.onsite_cash_received==='YES')chips.push('<span class="chip">현금수납✓</span>');
     if(r.onsite_photo_taken==='YES')chips.push('<span class="chip">사진✓</span>');
-    return `<label class="row pick-row"><input type="checkbox" class="pick" value="${esc(r.reservation_id)}"><div class="row-main"><div class="row-line"><div class="rid">${esc(r.reservation_id)}</div><div class="small">${esc(r.status||statusForTab())}</div></div><div class="meta"><b>${esc(r.customer_name)}</b> · ${esc(r.customer_email)}<br>${esc(r.concert_date)} ${esc(koreanTime(r.concert_time))} · 짐 맡기는 시간 ${esc(koreanTime(r.pickup_time)||'-')}<br>캐리어 ${esc(r.actual_suitcase_count||r.expected_suitcase_count||'-')} · 캐리어 외 추가 짐 ${esc(r.actual_extra_bag_count||r.expected_extra_bag_count||'0')}${r.picked_up_by?' · Staff '+esc(r.picked_up_by):''}</div><div class="chips">${chips.join('')}</div></div></label>`
+    return `<label class="row pick-row"><input type="checkbox" class="pick" value="${esc(r.reservation_id)}"><div class="row-main"><div class="row-line"><div class="rid">${esc(r.reservation_id)}</div><div class="small">${esc(r.status||statusForTab())}</div></div><div class="meta"><b>${esc(r.customer_name)}</b> · ${esc(r.customer_email)}<br>${esc(r.concert_date)} ${esc(koreanTime(r.concert_time))} · 짐 맡기는 시간 ${esc(koreanTime(r.pickup_time)||'-')}<br>캐리어 ${esc(r.actual_suitcase_count||r.expected_suitcase_count||'-')} · 추가 짐 ${esc(r.actual_extra_bag_count||r.expected_extra_bag_count||'0')}${r.picked_up_by?' · Staff '+esc(r.picked_up_by):''}</div><div class="chips">${chips.join('')}</div></div></label>`
   }).join('');
   toolbar.classList.remove('hidden');selectAllBtn.classList.remove('hidden');document.querySelectorAll('.pick').forEach(cb=>cb.addEventListener('change',updateSelection))
 }
