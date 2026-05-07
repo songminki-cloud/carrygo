@@ -217,3 +217,15 @@ The admin screen is a field-operation tool, not a landing page. Keep the header 
 3. record/list area
 
 Do not wrap every line in a pill or card. If everything has a border, nothing is important.
+
+
+## Admin wordmark rule
+
+`ADMIN` beside the CarryGo logo is not a small helper label. Treat it as a strong operational wordmark that carries similar visual impact to the logo.
+
+Rules:
+- Place `ADMIN` to the right of the CarryGo logo when horizontal space allows.
+- Use uppercase `ADMIN`.
+- Use a heavy black sans wordmark style: very bold, tight tracking, compact line-height.
+- No pill, border, box, or muted helper-label treatment.
+- Align it visually with the logo mass so it feels like a deliberate brand extension, not a floating label.
