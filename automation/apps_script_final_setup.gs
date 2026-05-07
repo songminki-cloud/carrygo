@@ -1113,7 +1113,7 @@ function buildPaymentInstructionEmailBodyFinal_(r) {
     '포함 사항: 기본요금 20,000원(캐리어 1개 보관) / 선택 시간 짐 맡기기 / 공연 종료 후 2시간 이내 수령',
     '',
     '신청 후 6시간 이내 결제가 확인되지 않으면 신청이 취소될 수 있습니다.',
-    '현장 추가 결제: 추가 캐리어 1개당 ₩20,000, 추가 짐은 가방 1개당 ₩10,000. 한화가 없으면 추가 짐은 $10. 지퍼 등으로 닫히는 가방에 한해 접수하며, 쇼핑백·비닐봉투처럼 열린 형태의 짐은 맡기실 수 없습니다.',
+    '현장 추가 결제: 추가 캐리어 1개당 ₩20,000, 추가 짐은 가방 1개당 ₩10,000. 한화가 없으면 추가 짐은 $10. 지퍼 및 잠금장치가 있는 가방에 한합니다. 쇼핑백·비닐봉투 등 쉽게 찢어지는 짐은 맡기실 수 없습니다.',
     '결제 후 고객 변심 취소 및 노쇼는 환불되지 않습니다.',
     '',
     'CarryGo',
@@ -1182,7 +1182,7 @@ function buildPaymentInstructionEmailHtmlFinal_(r) {
     '짐 맡기는 시간: ' + escapeHtmlFinal_(formatKoreanTimeFinal_(r.pickup_time || '')) + ' <span style="color:#777;">(30분 전부터 접수, 정시 마감)</span>',
     '</div>',
     '</div>',
-    '<div style="margin-top:15px;font-size:12px;line-height:1.55;color:#666;font-weight:650;">포함 사항: 기본요금 20,000원(캐리어 1개 보관) / 선택 시간 짐 맡기기 / 공연 종료 후 2시간 이내 수령<br>현장 추가 결제: 추가 캐리어 1개당 20,000원, 추가 짐은 가방 1개당 10,000원. 한화가 없으면 추가 짐은 $10. 지퍼 등으로 닫히는 가방에 한해 접수하며, 쇼핑백·비닐봉투처럼 열린 형태의 짐은 맡기실 수 없습니다.</div>',
+    '<div style="margin-top:15px;font-size:12px;line-height:1.55;color:#666;font-weight:650;">포함 사항: 기본요금 20,000원(캐리어 1개 보관) / 선택 시간 짐 맡기기 / 공연 종료 후 2시간 이내 수령<br>현장 추가 결제: 추가 캐리어 1개당 20,000원, 추가 짐은 가방 1개당 10,000원. 한화가 없으면 추가 짐은 $10. 지퍼 및 잠금장치가 있는 가방에 한합니다. 쇼핑백·비닐봉투 등 쉽게 찢어지는 짐은 맡기실 수 없습니다.</div>',
     '</div>',
     '<div style="font-size:12px;color:#777;line-height:1.5;margin-top:14px;text-align:center;">CarryGo</div>',
     '</div>',
@@ -1374,7 +1374,7 @@ function buildReservationConfirmedEmailBodyFinal_(r) {
     '현장 추가 결제:',
     '- 추가 캐리어: 1개당 ₩20,000',
     '- 추가 짐: 가방 1개당 ₩10,000 / 한화가 없으면 $10 현금 가능',
-    '- 추가 짐은 지퍼 등으로 닫히는 가방에 한해 접수하며, 쇼핑백·비닐봉투처럼 열린 형태의 짐은 맡기실 수 없습니다.',
+    '- 추가 짐은 지퍼 및 잠금장치가 있는 가방에 한합니다. 쇼핑백·비닐봉투 등 쉽게 찢어지는 짐은 맡기실 수 없습니다.',
     '- 현장 환율 계산 없음',
     '',
     '짐 맡길 때 안내:',
@@ -1547,8 +1547,8 @@ function buildReservationConfirmedEmailHtmlFinal_(r) {
     <ul style="padding-left:20px;">
       <li>Base fee includes storage for 1 suitcase, drop-off at the selected time, and pickup within 2 hours after the concert ends.</li>
       <li>기본요금 20,000원에는 캐리어 1개 보관, 선택 시간 짐 맡기기, 공연 종료 후 2시간 이내 수령이 포함됩니다.</li>
-      <li>Additional suitcase: ₩20,000 each. Extra bag: ₩10,000 each. If you do not have KRW, $10 cash per extra bag is accepted. Open items such as shopping bags or plastic bags are not accepted. No exchange-rate calculation onsite.</li>
-      <li>추가 캐리어: 1개당 ₩20,000. 추가 짐: 가방 1개당 ₩10,000. 한화가 없으면 추가 짐은 $10 현금 가능. 지퍼 등으로 닫히는 가방에 한해 접수하며, 쇼핑백·비닐봉투처럼 열린 형태의 짐은 맡기실 수 없습니다. 현장 환율 계산 없음.</li>
+      <li>Additional suitcase: ₩20,000 each. Extra bag: ₩10,000 each. If you do not have KRW, $10 cash per extra bag is accepted. Shopping bags, plastic bags, or other easily torn items are not accepted. No exchange-rate calculation onsite.</li>
+      <li>추가 캐리어: 1개당 ₩20,000. 추가 짐: 가방 1개당 ₩10,000. 한화가 없으면 추가 짐은 $10 현금 가능. 지퍼 및 잠금장치가 있는 가방에 한합니다. 쇼핑백·비닐봉투 등 쉽게 찢어지는 짐은 맡기실 수 없습니다. 현장 환율 계산 없음.</li>
       <li>Late pickup: If luggage is not picked up within 2 hours after the concert ends, an additional late pickup/storage fee of KRW 30,000 per booking will apply.</li>
       <li>당일 미수령: 공연 종료 후 2시간 이내 수령하지 못한 경우 추가 보관 및 운영 비용으로 예약 1건당 30,000원이 부과됩니다.</li>
       <li>Customer cancellations and no-shows are non-refundable after payment.</li>
@@ -1839,7 +1839,7 @@ function buildInlineStaffLoginHtmlFinal_(reservation, token) {
       <div style="padding:14px;border:2px solid #111;border-radius:12px;background:#fff;margin-bottom:12px;">
         <div style="font-size:clamp(15px,3vw,22px);color:#555;font-weight:900;">현장 추가 결제금액 / Onsite Cash Due</div>
         <div id="onsiteDueBox" style="font-size:clamp(28px,5.4vw,44px);font-weight:950;letter-spacing:-.04em;line-height:1.05;">₩0</div>
-        <div style="font-size:clamp(13px,2.7vw,20px);color:#666;line-height:1.45;font-weight:750;">기본요금에 포함된 캐리어 1개 제외. 추가 캐리어 ₩20,000 / 추가 짐 ₩10,000. 추가 짐: 닫히는 가방만. 쇼핑백/비닐봉투 불가.</div>
+        <div style="font-size:clamp(13px,2.7vw,20px);color:#666;line-height:1.45;font-weight:750;">기본요금에 포함된 캐리어 1개 제외. 추가 캐리어 ₩20,000 / 추가 짐 ₩10,000. 추가 짐: 지퍼/잠금장치 있는 가방만. 쇼핑백/비닐봉투 불가.</div>
       </div>
       <div style="margin:14px 0 16px;padding:14px;border-radius:12px;background:#fff;border:1px solid #ddd;font-size:clamp(16px,3.3vw,24px);line-height:1.45;color:#333;font-weight:850;">
         <div style="font-weight:950;margin-bottom:8px;">태그번호 발급 후 안내</div>
