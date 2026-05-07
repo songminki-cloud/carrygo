@@ -344,6 +344,10 @@ function doGet(e) {
       return adminConfirmPaymentApiFinal_(params);
     }
 
+    if (mode === 'admin_cancel_expired_unpaid') {
+      return adminCancelExpiredUnpaidApiFinal_(params);
+    }
+
     if (mode === 'admin_list') {
       return adminListByStatusApiFinal_(params);
     }
@@ -1965,6 +1969,21 @@ function formatDateTimeMaybeFinal_(value) {
   return String(value);
 }
 
+function parseDateTimeFinal_(value) {
+  if (!value) return null;
+  if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value.getTime())) return value;
+  const text = String(value || '').trim();
+  const match = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if (!match) return null;
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), Number(match[4] || 0), Number(match[5] || 0), Number(match[6] || 0));
+}
+
+function isPaymentExpiredFinal_(paymentDueAt, now) {
+  const due = parseDateTimeFinal_(paymentDueAt);
+  if (!due) return false;
+  return due.getTime() <= (now || new Date()).getTime();
+}
+
 
 
 function adminResetCheckinTestsApiFinal_(params) {
@@ -2293,26 +2312,50 @@ function adminListUnpaidApiFinal_(params) {
   try {
     validateAdminPinFinal_(params.admin_pin);
     const rows = readSheetObjectsFinal_(CARRYGO_SHEETS.RESERVATIONS, RESERVATIONS_HEADERS);
+    const now = new Date();
     const reservations = rows
       .filter(row => String(row.status || '') === 'UNPAID')
-      .slice(-50)
-      .reverse()
-      .map(row => ({
-        reservation_id: row.reservation_id,
-        customer_name: row.customer_name,
-        customer_email: row.customer_email,
-        concert_date: row.concert_date,
-        concert_time: row.concert_time,
-        pickup_time: row.pickup_time,
-        booking_channel: row.booking_channel,
-        luggage_tag_numbers: row.luggage_tag_numbers,
-        expected_suitcase_count: row.expected_suitcase_count,
-        expected_extra_bag_count: row.expected_extra_bag_count,
-        payment_method: row.payment_method,
-        amount_display: String(row.currency || '').toUpperCase() === 'USD' ? '$' + row.base_fee : '₩' + Number(row.base_fee || 0).toLocaleString('ko-KR'),
-        payment_due_at: formatDateTimeMaybeFinal_(row.payment_due_at)
-      }));
+      .map(row => adminReservationSummaryFinal_(row))
+      .map(row => {
+        row.is_payment_expired = isPaymentExpiredFinal_(row.payment_due_at, now);
+        return row;
+      })
+      .sort((a, b) => {
+        if (a.is_payment_expired !== b.is_payment_expired) return a.is_payment_expired ? 1 : -1;
+        return String(b.reservation_id || '').localeCompare(String(a.reservation_id || ''));
+      })
+      .slice(0, 100);
     return jsonFinal_({ ok: true, reservations: reservations });
+  } catch (err) {
+    return jsonFinal_({ ok: false, error: String(err && err.message ? err.message : err) });
+  }
+}
+
+function adminCancelExpiredUnpaidApiFinal_(params) {
+  try {
+    validateAdminPinFinal_(params.admin_pin);
+    const ids = splitIdsFinal_(params.reservation_id);
+    if (!ids.length) throw new Error('reservation_id is required');
+    const sh = getSheetFinal_(CARRYGO_SHEETS.RESERVATIONS);
+    const now = new Date();
+    const cancelled = [];
+    const errors = [];
+    ids.forEach(reservationId => {
+      try {
+        const rowNo = findReservationRowFinal_(reservationId);
+        const row = getReservationObjectByRowFinal_(rowNo);
+        if (String(row.status || '') !== 'UNPAID') throw new Error('UNPAID 상태만 취소할 수 있습니다.');
+        if (!isPaymentExpiredFinal_(row.payment_due_at, now)) throw new Error('결제기한이 지나지 않았습니다.');
+        setReservationValueFinal_(sh, rowNo, 'status', 'CANCELLED');
+        setReservationValueFinal_(sh, rowNo, 'cancelled_at', now);
+        setReservationValueFinal_(sh, rowNo, 'note', mergeNoteFinal_(row.note, '미입금 취소'));
+        cancelled.push(reservationId);
+      } catch (err) {
+        errors.push(reservationId + ': ' + String(err && err.message ? err.message : err));
+      }
+    });
+    if (errors.length) return jsonFinal_({ ok: false, cancelled: cancelled, error: errors.join('\n') });
+    return jsonFinal_({ ok: true, cancelled: cancelled, status: 'CANCELLED' });
   } catch (err) {
     return jsonFinal_({ ok: false, error: String(err && err.message ? err.message : err) });
   }
