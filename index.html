@@ -169,22 +169,25 @@ document.getElementById('customerEmail').addEventListener('input',updateEmailSug
 function showEmailConfirm({kicker='Email Check',title='이메일을 확인해 주세요.',copy='예약 확정메일과 QR이 아래 이메일로 전송됩니다.',value='',cancelLabel='다시 입력',okLabel='맞아요'}={}){return new Promise(resolve=>{const layer=document.getElementById('emailConfirmLayer');document.getElementById('emailConfirmKicker').textContent=kicker;document.getElementById('emailConfirmTitle').textContent=title;document.getElementById('emailConfirmCopy').textContent=copy;const valueBox=document.getElementById('emailConfirmValue');valueBox.textContent=value;valueBox.style.display=value?'block':'none';const cancel=document.getElementById('emailConfirmCancel');const ok=document.getElementById('emailConfirmOk');cancel.textContent=cancelLabel;ok.textContent=okLabel;cancel.style.display=cancelLabel?'block':'none';cancel.parentElement.style.gridTemplateColumns=cancelLabel?'1fr 1fr':'1fr';function close(result){layer.hidden=true;cancel.removeEventListener('click',onCancel);ok.removeEventListener('click',onOk);document.removeEventListener('keydown',onKey);resolve(result)}function onCancel(){close(false)}function onOk(){close(true)}function onKey(e){if(e.key==='Escape')close(false)}cancel.addEventListener('click',onCancel);ok.addEventListener('click',onOk);document.addEventListener('keydown',onKey);layer.hidden=false;setTimeout(()=>ok.focus(),0)})}
 function confirmEmailBeforeSubmit(email){return showEmailConfirm({title:'이메일을 한 번 더 확인해 주세요.',copy:'예약 확정메일과 QR이 아래 이메일로 전송됩니다.',value:email,cancelLabel:'다시 입력',okLabel:'맞아요'})}
 function validateReservationFormBeforeSubmit(form,data){
-  const errors=[];let first=null;
-  const add=(ref,msg)=>{errors.push(msg);if(!first)first=ref};
+  const messages=[];let first=null;
   const byId=id=>document.getElementById(id);
-  if(!data.concert_id)add(byId('concertSelect'),'공연을 선택해 주세요.');
-  if(!data.concert_date_id)add(byId('dateSelect'),'공연일시를 선택해 주세요.');
-  if(!data.pickup_time)add(byId('pickupTime'),'짐 맡기는 시간을 선택해 주세요.');
-  if(!String(data.customer_name||'').trim())add(form.elements.customer_name,'이름을 입력해 주세요.');
-  if(!data.customer_country)add(form.elements.customer_country,'국가를 선택해 주세요.');
-  if(data.customer_country==='Other'&&!/^\+\d{1,4}$/.test(String(data.country_code||'').trim()))add(byId('countryCodeManual'),'국가번호를 +와 숫자로 입력해 주세요. 예: +33');
-  if(!String(data.phone_number||'').trim())add(form.elements.phone_number,'휴대폰 번호를 입력해 주세요.');
-  if(!isValidEmailFormat(data.customer_email))add(byId('customerEmail'),'이메일 형식을 확인해 주세요. 예: name@example.com');
-  if(!data.payment_method)add(form.elements.payment_method,'결제수단을 선택해 주세요.');
-  if(!form.querySelector('input[type="checkbox"][required]').checked)add(form.querySelector('input[type="checkbox"][required]'),'필수 안내사항 확인에 체크해 주세요.');
-  return {ok:!errors.length,errors,first};
+  const mark=ref=>{if(!first)first=ref};
+  const actions=[];
+  if(!data.concert_id){actions.push('공연을 선택');mark(byId('concertSelect'))}
+  if(!data.concert_date_id){actions.push('공연일시를 선택');mark(byId('dateSelect'))}
+  if(!data.pickup_time){actions.push('짐 맡기는 시간을 선택');mark(byId('pickupTime'))}
+  if(!String(data.customer_name||'').trim()){actions.push('이름을 입력');mark(form.elements.customer_name)}
+  if(!data.customer_country){actions.push('국가를 선택');mark(form.elements.customer_country)}
+  if(!String(data.phone_number||'').trim()){actions.push('휴대폰 번호를 입력');mark(form.elements.phone_number)}
+  if(!data.payment_method){actions.push('결제수단을 선택');mark(form.elements.payment_method)}
+  if(actions.length)messages.push(actions.join('하고 ')+'한 뒤 신청해 주세요.');
+  if(data.customer_country==='Other'&&!/^\+\d{1,4}$/.test(String(data.country_code||'').trim())){messages.push('국가번호는 +와 숫자로 입력한 뒤 신청해 주세요.\n예: +33');mark(byId('countryCodeManual'))}
+  if(String(data.customer_email||'').trim()&&!isValidEmailFormat(data.customer_email)){messages.push('이메일 주소를 다시 확인해 주세요.\n예: name@example.com');mark(byId('customerEmail'))}
+  if(!String(data.customer_email||'').trim()){messages.push('이메일 주소를 입력한 뒤 신청해 주세요.');mark(byId('customerEmail'))}
+  if(!form.querySelector('input[type="checkbox"][required]').checked){messages.push('필수 안내사항 확인에 체크한 뒤 신청해 주세요.');mark(form.querySelector('input[type="checkbox"][required]'))}
+  return {ok:!messages.length,errors:messages,first};
 }
-async function showValidationErrors(errors,first){await showEmailConfirm({kicker:'Check Required',title:'입력 정보를 확인해 주세요.',copy:errors.join('\n'),value:'',cancelLabel:'',okLabel:'확인'});if(first){first.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>{try{first.focus({preventScroll:true})}catch(e){}},350)}}
+async function showValidationErrors(errors,first){await showEmailConfirm({kicker:'Check Required',title:'아직 필요한 정보가 있어요.',copy:errors.join('\n'),value:'',cancelLabel:'',okLabel:'확인'});if(first){first.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>{try{first.focus({preventScroll:true})}catch(e){}},350)}}
 function escapeText(value){return String(value||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
 function formatConcertTitle(title){return escapeText(String(title||'').trim().replace(/\s+/g,' '))}
 function dateValue(d){return String(d.concert_date||d.label||'').slice(0,10)}
