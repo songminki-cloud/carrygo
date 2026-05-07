@@ -948,7 +948,7 @@ function requiredStringFinal_(value, fieldName) {
 function normalizeEmailFinal_(value) {
   const email = String(value || '').trim().toLowerCase();
   if (!email) throw new Error('customer_email is required');
-  if (!email.includes('@')) throw new Error('Invalid customer_email: ' + email);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) throw new Error('Invalid customer_email: ' + email);
   return email;
 }
 
