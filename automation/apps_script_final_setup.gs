@@ -1161,11 +1161,24 @@ function buildPaymentInstructionEmailHtmlFinal_(r) {
     ? '<div style="margin-top:14px;padding:13px 14px;border:1.5px solid #b00020;border-radius:12px;background:#fff7f5;color:#8f1d1d;font-size:14px;line-height:1.55;font-weight:800;">카카오페이에서 금액이 자동 입력되지 않을 수 있습니다.<br>송금 화면에서 <strong>20000</strong>을 직접 입력하고, 송금 메모/메시지에 <strong>' + reservationId + '</strong>를 입력해 주세요.</div>'
     : isPaypal
       ? '<div style="margin-top:14px;padding:13px 14px;border:1px solid #ddd;border-radius:12px;background:#fafafa;color:#333;font-size:14px;line-height:1.55;font-weight:750;">PayPal 링크로 결제해 주세요.<br>PayPal 메모/메시지에 예약번호 <strong>' + reservationId + '</strong>를 입력해 주세요.<br>링크가 작동하지 않으면 help@carrygoseoul.com 으로 연락해 주세요. 수동 인보이스로 도와드리겠습니다.</div>'
-      : '<div style="margin-top:14px;padding:13px 14px;border:1px solid #ddd;border-radius:12px;background:#fafafa;color:#333;font-size:14px;line-height:1.55;font-weight:750;">입금자명 또는 메모에 예약번호 <strong>' + reservationId + '</strong>를 입력해 주세요.</div>';
+      : '';
   const memoLabel = isPaypal ? 'PayPal 메모/메시지' : '송금메모/메시지';
-  const paymentDetailHtml = method === 'BANK'
-    ? '<div style="margin-top:12px;padding:13px 14px;border:1px solid #ddd;border-radius:12px;background:#fff;font-size:14px;line-height:1.7;font-weight:800;color:#222;">계좌이체 / Bank Transfer<br>은행: 신한은행<br>계좌번호: <strong>' + escapeHtmlFinal_(paymentBlock.link ? '' : (getScriptPropertyFinal_('BANK_ACCOUNT_NO') || '{{bank_account}}')) + '</strong><br>예금주: <strong>' + escapeHtmlFinal_((getScriptPropertyFinal_('BANK_ACCOUNT_HOLDER') || '{{account_holder}}') + ' (CarryGo 운영자)') + '</strong><br>송금 메모: <strong>' + reservationId + '</strong></div>'
-    : '';
+  const bankAccountNo = getScriptPropertyFinal_('BANK_ACCOUNT_NO') || '{{bank_account}}';
+  const bankHolder = (getScriptPropertyFinal_('BANK_ACCOUNT_HOLDER') || '{{account_holder}}') + ' (CarryGo 운영자)';
+  const paymentInfoHtml = method === 'BANK'
+    ? [
+      '결제금액: <span style="font-size:24px;font-weight:950;">' + escapeHtmlFinal_(amountText) + '</span><br>',
+      '결제방법: Bank Transfer<br>',
+      '은행: 신한은행<br>',
+      '계좌번호: <span style="font-size:20px;font-weight:950;">' + escapeHtmlFinal_(bankAccountNo) + '</span><br>',
+      '예금주: <span style="font-size:18px;font-weight:950;">' + escapeHtmlFinal_(bankHolder) + '</span><br>',
+      '송금 메모: <span style="font-size:18px;font-weight:950;">' + reservationId + '</span>'
+    ].join('')
+    : [
+      '결제금액: <span style="font-size:24px;font-weight:950;">' + escapeHtmlFinal_(amountText) + '</span><br>',
+      '결제방법: ' + escapeHtmlFinal_(paymentBlock.methodLabel) + '<br>',
+      escapeHtmlFinal_(memoLabel) + ': <span style="font-size:18px;font-weight:950;">' + reservationId + '</span>'
+    ].join('');
 
   return [
     '<div style="margin:0;padding:0;background:#f7f2ea;font-family:Arial,\'Apple SD Gothic Neo\',\'Noto Sans KR\',sans-serif;color:#111;">',
@@ -1177,13 +1190,10 @@ function buildPaymentInstructionEmailHtmlFinal_(r) {
     '<div style="border:1.5px solid #111;border-radius:14px;padding:15px;background:#fff;margin-bottom:14px;">',
     '<div style="font-size:12px;font-weight:900;color:#777;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px;">Payment</div>',
     '<div style="font-size:17px;line-height:1.7;font-weight:850;">',
-    '결제금액: <span style="font-size:24px;font-weight:950;">' + escapeHtmlFinal_(amountText) + '</span><br>',
-    '결제방법: ' + escapeHtmlFinal_(paymentBlock.methodLabel) + '<br>',
-    escapeHtmlFinal_(memoLabel) + ': <span style="font-size:18px;font-weight:950;">' + reservationId + '</span>',
+    paymentInfoHtml,
     '</div>',
     '</div>',
     notice,
-    paymentDetailHtml,
     paymentBlock.link ? '<a href="' + escapeHtmlFinal_(paymentBlock.link || '') + '" style="display:block;text-align:center;background:#111;color:#fff;text-decoration:none;border-radius:999px;padding:15px 14px;font-size:17px;font-weight:900;margin:16px 0;">' + escapeHtmlFinal_(paymentBlock.buttonLabel || '결제하기') + '</a>' : '',
     '<div style="margin-top:20px;border-top:1px solid #ddd;padding-top:15px;">',
     '<div style="font-size:15px;font-weight:900;margin-bottom:8px;">예약 정보</div>',
