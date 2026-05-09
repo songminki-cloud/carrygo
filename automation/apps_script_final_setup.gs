@@ -618,7 +618,7 @@ function createWalkinReservationFinal(body) {
 
     const rowObject = {
       reservation_id: reservationId,
-      status: 'PICKED_UP',
+      status: 'CHECKED_IN',
       created_at: now,
       confirmed_at: now,
       picked_up_at: now,
@@ -1865,8 +1865,8 @@ function buildStaffActionHtmlFinal_(reservation, token, params) {
   const status = String(reservation.status || '');
   const tags = String(reservation.luggage_tag_numbers || '').trim();
 
-  if (status === 'PICKED_UP') {
-    return `<div style="margin-top:14px;padding:20px 14px;border-radius:12px;background:#eefbea;color:#156a17;font-weight:900;text-align:center;font-size:clamp(22px,4.4vw,36px);line-height:1.22;">PICKED UP / 접수완료<br/><span style="display:block;margin-top:10px;font-size:clamp(30px,7vw,60px);letter-spacing:-.04em;">${escapeHtmlFinal_(tags || 'TAG NOT ASSIGNED')}</span><span style="display:inline-block;margin-top:8px;font-size:clamp(14px,2.6vw,22px);font-weight:800;">Staff: ${escapeHtmlFinal_(reservation.picked_up_by || (staff && staff.staff_id) || '')}</span></div>`;
+  if (status === 'PICKED_UP' || status === 'CHECKED_IN') {
+    return `<div style="margin-top:14px;padding:20px 14px;border-radius:12px;background:#eefbea;color:#156a17;font-weight:900;text-align:center;font-size:clamp(22px,4.4vw,36px);line-height:1.22;">CHECKED-IN / 보관접수 완료<br/><span style="display:block;margin-top:10px;font-size:clamp(30px,7vw,60px);letter-spacing:-.04em;">${escapeHtmlFinal_(tags || 'TAG NOT ASSIGNED')}</span><span style="display:inline-block;margin-top:8px;font-size:clamp(14px,2.6vw,22px);font-weight:800;">Staff: ${escapeHtmlFinal_(reservation.picked_up_by || (staff && staff.staff_id) || '')}</span></div>`;
   }
 
   return buildInlineStaffLoginHtmlFinal_(reservation, token);
@@ -1903,7 +1903,7 @@ function buildInlineStaffLoginHtmlFinal_(reservation, token) {
       <div id="staffLoginBox">
         <input id="staffCodeInput" placeholder="Staff code" autocomplete="off" style="box-sizing:border-box;width:100%;font-size:clamp(22px,4.8vw,34px);padding:18px;border:1px solid #ccc;border-radius:10px;margin:0 0 14px;">
       </div>
-      <button type="button" onclick="carryGoOnsiteCheckinFinal()" style="width:100%;font-size:clamp(20px,4vw,30px);font-weight:900;background:#111;color:#fff;border:0;border-radius:10px;padding:19px 10px;">태그 발급 & 접수완료</button>
+      <button type="button" onclick="carryGoOnsiteCheckinFinal()" style="width:100%;font-size:clamp(20px,4vw,30px);font-weight:900;background:#111;color:#fff;border:0;border-radius:10px;padding:19px 10px;">태그 발급 & 보관접수 완료</button>
       <div id="staffMsg" style="font-size:clamp(16px,3.2vw,24px);color:#b00020;margin-top:14px;font-weight:850;line-height:1.4;"></div>
     </div>
     <script>
@@ -1970,7 +1970,7 @@ function buildInlineStaffLoginHtmlFinal_(reservation, token) {
           const data = await carryGoFetchJsonFinal(CARRYGO_WEBAPP_URL + '?' + q.toString());
           if (!data.ok) throw new Error(data.error || 'Check-in failed.');
           if (data.staff_session) localStorage.setItem(CARRYGO_LOCAL_SESSION_KEY, data.staff_session);
-          document.getElementById('staffBox').innerHTML = '<div style="padding:20px 14px;border-radius:12px;background:#eefbea;color:#156a17;font-weight:900;text-align:center;font-size:clamp(22px,4.4vw,36px);line-height:1.22;">PICKED UP / 접수완료<br><span style="display:block;margin-top:10px;font-size:clamp(36px,8vw,68px);letter-spacing:-.04em;">' + escapeHtmlClientFinal(data.luggage_tag_numbers) + '</span><span style="display:block;margin-top:8px;font-size:clamp(18px,3vw,28px);">추가결제 ' + escapeHtmlClientFinal(data.onsite_due_display) + '</span><span style="display:block;margin-top:6px;font-size:13px;font-weight:700;">이 번호를 러기지택 고객용/짐부착용 양쪽에 기재하세요.</span></div>';
+          document.getElementById('staffBox').innerHTML = '<div style="padding:20px 14px;border-radius:12px;background:#eefbea;color:#156a17;font-weight:900;text-align:center;font-size:clamp(22px,4.4vw,36px);line-height:1.22;">CHECKED-IN / 보관접수 완료<br><span style="display:block;margin-top:10px;font-size:clamp(36px,8vw,68px);letter-spacing:-.04em;">' + escapeHtmlClientFinal(data.luggage_tag_numbers) + '</span><span style="display:block;margin-top:8px;font-size:clamp(18px,3vw,28px);">추가결제 ' + escapeHtmlClientFinal(data.onsite_due_display) + '</span><span style="display:block;margin-top:6px;font-size:13px;font-weight:700;">이 번호를 러기지택 고객용/짐부착용 양쪽에 기재하세요.</span></div>';
         } catch (err) {
           msg.style.color = '#b00020';
           msg.textContent = err.message || String(err);
@@ -2006,7 +2006,7 @@ function staffLoginApiFinal_(params) {
 }
 
 function pickupCompleteApiFinal_(params) {
-  return jsonFinal_({ ok: false, error: 'Use onsite_checkin_api to confirm counts, cash due, and luggage tags before PICKED_UP.' });
+  return jsonFinal_({ ok: false, error: 'Use onsite_checkin_api to confirm counts, cash due, and luggage tags before CHECKED_IN.' });
 }
 
 function formatDateTimeMaybeFinal_(value) {
@@ -2064,7 +2064,7 @@ function adminResetCheckinTestsApiFinal_(params) {
     for (let i = 1; i < values.length; i++) {
       const row = values[i];
       const hadTags = String(row[tagCol] || '').trim();
-      const wasPickedUp = String(row[statusCol] || '').trim() === 'PICKED_UP';
+      const wasPickedUp = ['PICKED_UP','CHECKED_IN'].includes(String(row[statusCol] || '').trim());
       const isPaid = String(row[paymentStatusCol] || '').trim() === 'PAID';
       const isWalkIn = String(row[bookingChannelCol] || '').trim() === 'WALK_IN';
       if (!hadTags && !wasPickedUp) continue;
@@ -2150,12 +2150,12 @@ function onsiteCheckinApiFinal_(params) {
     if (String(r.checkin_token || '') !== token) throw new Error('Invalid or expired QR code.');
     if (String(r.status || '') === 'RETURNED') throw new Error('This reservation is already returned.');
     if (String(r.status || '') === 'CANCELLED') throw new Error('This reservation is cancelled.');
-    if (String(r.status || '') === 'PICKED_UP') {
+    if (String(r.status || '') === 'PICKED_UP' || String(r.status || '') === 'CHECKED_IN') {
       return jsonFinal_({
         ok: true,
         already_assigned: true,
         reservation_id: reservationId,
-        status: 'PICKED_UP',
+        status: String(r.status || '') || 'CHECKED_IN',
         luggage_tag_numbers: normalizeLuggageTagStringFinal_(r.luggage_tag_numbers || ''),
         actual_suitcase_count: r.actual_suitcase_count || r.expected_suitcase_count || '',
         actual_extra_bag_count: r.actual_extra_bag_count || r.expected_extra_bag_count || '',
@@ -2194,7 +2194,7 @@ function onsiteCheckinApiFinal_(params) {
     setReservationValueFinal_(sh, rowNo, 'luggage_tag_numbers', tags);
     setReservationValueFinal_(sh, rowNo, 'onsite_staff', staff.staff_id || staff.staff_name || '');
     setReservationValueFinal_(sh, rowNo, 'onsite_consent_flags', mergeNoteFinal_(r.onsite_consent_flags || '', 'HARDCOPY_CONFIRMED=YES; ONSITE_CHECKIN_BY=' + (staff.staff_id || staff.staff_name || 'STAFF')));
-    setReservationValueFinal_(sh, rowNo, 'status', 'PICKED_UP');
+    setReservationValueFinal_(sh, rowNo, 'status', 'CHECKED_IN');
     setReservationValueFinal_(sh, rowNo, 'picked_up_at', now);
     setReservationValueFinal_(sh, rowNo, 'picked_up_by', staff.staff_id || staff.staff_name || 'STAFF');
 
@@ -2202,7 +2202,7 @@ function onsiteCheckinApiFinal_(params) {
       ok: true,
       staff_session: sessionToken,
       reservation_id: reservationId,
-      status: 'PICKED_UP',
+      status: 'CHECKED_IN',
       already_assigned: !!existingTags,
       luggage_tag_numbers: tags,
       actual_suitcase_count: actualSuitcase,
@@ -2569,11 +2569,15 @@ function adminListByStatusApiFinal_(params) {
     if (!status) throw new Error('status is required');
     const rows = readSheetObjectsFinal_(CARRYGO_SHEETS.RESERVATIONS, RESERVATIONS_HEADERS);
     const reservations = rows
-      .filter(row => String(row.status || '').toUpperCase() === status)
+      .filter(row => {
+        const rowStatus = String(row.status || '').toUpperCase();
+        if (status === 'CHECKED_IN') return rowStatus === 'CHECKED_IN' || rowStatus === 'PICKED_UP';
+        return rowStatus === status;
+      })
       .filter(row => {
         const paymentStatus = String(row.payment_status || '').toUpperCase();
         if (status === 'CANCELLED') return paymentStatus === 'PAID' && !row.refunded_at;
-        if (status === 'PICKED_UP') return paymentStatus === 'PAID';
+        if (status === 'PICKED_UP' || status === 'CHECKED_IN') return paymentStatus === 'PAID';
         if (status === 'UNPAID') return paymentStatus !== 'PAID' && paymentStatus !== 'REFUNDED';
         return true;
       })
@@ -2601,7 +2605,7 @@ function adminUpdateStatusApiFinal_(params) {
       const currentStatus = String(row.status || '').toUpperCase();
       const paymentStatus = String(row.payment_status || '').toUpperCase();
       if (nextStatus === 'RETURNED') {
-        if (currentStatus !== 'PICKED_UP') throw new Error('PICKED_UP 상태만 수령완료 처리할 수 있습니다: ' + reservationId);
+        if (!['PICKED_UP','CHECKED_IN'].includes(currentStatus)) throw new Error('CHECKED_IN 상태만 수령완료 처리할 수 있습니다: ' + reservationId);
         if (paymentStatus !== 'PAID') throw new Error('결제완료 예약만 수령완료 처리할 수 있습니다: ' + reservationId);
       }
       if (nextStatus === 'CANCELLED') {
