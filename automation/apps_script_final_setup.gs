@@ -1164,7 +1164,7 @@ function buildPaymentInstructionEmailHtmlFinal_(r) {
       : '<div style="margin-top:14px;padding:13px 14px;border:1px solid #ddd;border-radius:12px;background:#fafafa;color:#333;font-size:14px;line-height:1.55;font-weight:750;">입금자명 또는 메모에 예약번호 <strong>' + reservationId + '</strong>를 입력해 주세요.</div>';
   const memoLabel = isPaypal ? 'PayPal 메모/메시지' : '송금메모/메시지';
   const paymentDetailHtml = method === 'BANK'
-    ? '<div style="margin-top:12px;padding:13px 14px;border:1px solid #ddd;border-radius:12px;background:#fff;font-size:14px;line-height:1.7;font-weight:800;color:#222;">계좌이체 / Bank Transfer<br>은행: 신한은행<br>계좌번호: <strong>' + escapeHtmlFinal_(paymentBlock.link ? '' : (getScriptPropertyFinal_('BANK_ACCOUNT_NO') || '{{bank_account}}')) + '</strong><br>예금주: <strong>' + escapeHtmlFinal_(getScriptPropertyFinal_('BANK_ACCOUNT_HOLDER') || '{{account_holder}}') + '</strong><br>송금 메모: <strong>' + reservationId + '</strong></div>'
+    ? '<div style="margin-top:12px;padding:13px 14px;border:1px solid #ddd;border-radius:12px;background:#fff;font-size:14px;line-height:1.7;font-weight:800;color:#222;">계좌이체 / Bank Transfer<br>은행: 신한은행<br>계좌번호: <strong>' + escapeHtmlFinal_(paymentBlock.link ? '' : (getScriptPropertyFinal_('BANK_ACCOUNT_NO') || '{{bank_account}}')) + '</strong><br>예금주: <strong>' + escapeHtmlFinal_((getScriptPropertyFinal_('BANK_ACCOUNT_HOLDER') || '{{account_holder}}') + ' (CarryGo 운영자)') + '</strong><br>송금 메모: <strong>' + reservationId + '</strong></div>'
     : '';
 
   return [
@@ -1262,7 +1262,7 @@ function buildPaymentInstructionEmailPaymentBlockFinal_(r) {
         '송금 메모: ' + reservationId,
         '은행: 신한은행',
         '계좌번호: ' + accountNo,
-        '예금주: ' + holder
+        '예금주: ' + holder + ' (CarryGo 운영자)'
       ].join('\n'),
       en: [
         'Bank Transfer',
@@ -1270,7 +1270,7 @@ function buildPaymentInstructionEmailPaymentBlockFinal_(r) {
         'Transfer memo: ' + reservationId,
         'Bank: SHINHAN BANK',
         'Account No.: ' + accountNo,
-        'Account Holder: ' + holder,
+        'Account Holder: ' + holder + ' (CarryGo operator)',
         '',
         'If you need international bank transfer information, please contact CarryGo.'
       ].join('\n')
