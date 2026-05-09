@@ -1158,7 +1158,7 @@ function buildPaymentInstructionEmailHtmlFinal_(r) {
   const isKakao = method === 'KAKAOPAY';
   const isPaypal = method === 'PAYPAL';
   const notice = isKakao
-    ? '<div style="margin-top:14px;padding:13px 14px;border:1.5px solid #b00020;border-radius:12px;background:#fff7f5;color:#8f1d1d;font-size:14px;line-height:1.55;font-weight:800;">카카오페이에서 금액이 자동 입력되지 않을 수 있습니다.<br>송금 화면에서 <strong>20000</strong>을 직접 입력하고, 송금 메모/메시지에 <strong>' + reservationId + '</strong>를 입력해 주세요.</div>'
+    ? '<div style="margin-top:14px;padding:14px 15px;border:1.7px solid #111;border-radius:13px;background:#fff8d9;color:#111;font-size:14px;line-height:1.62;font-weight:850;"><div style="font-size:12px;font-weight:950;letter-spacing:.08em;text-transform:uppercase;color:#8f6b00;margin-bottom:7px;">KakaoPay memo guide</div><strong style="font-size:16px;">카카오페이에는 송금 메모 칸이 없습니다.</strong><br>송금 화면 하단의 <strong>[받는 분 내역 표시]</strong>를 눌러<br><strong>' + reservationId + '</strong> 를 입력해 주세요.<br><span style="color:#6b5a20;font-size:13px;">미입력 시 카카오 이름으로만 표시되어 입금 확인이 지연될 수 있습니다.</span></div>'
     : isPaypal
       ? '<div style="margin-top:14px;padding:13px 14px;border:1px solid #ddd;border-radius:12px;background:#fafafa;color:#333;font-size:14px;line-height:1.55;font-weight:750;">PayPal 링크로 결제해 주세요.<br>PayPal 메모/메시지에 예약번호 <strong>' + reservationId + '</strong>를 입력해 주세요.<br>링크가 작동하지 않으면 help@carrygoseoul.com 으로 연락해 주세요. 수동 인보이스로 도와드리겠습니다.</div>'
       : '';
@@ -1224,15 +1224,27 @@ function buildPaymentInstructionEmailPaymentBlockFinal_(r) {
       methodLabel: 'KakaoPay',
       link: link,
       buttonLabel: '카카오페이 송금하기',
-      noticeKo: '※ 카카오페이는 링크를 눌러도 금액이 자동 입력되지 않을 수 있습니다. 송금 화면에서 반드시 ₩20,000을 직접 입력하고, 송금 메모에 예약번호 ' + reservationId + '를 입력해 주세요.',
-      noticeEn: '※ KakaoPay may not auto-fill the amount. Please enter ₩20,000 manually and add your Reservation ID ' + reservationId + ' in the transfer memo.',
+      noticeKo: '※ 카카오페이는 송금 메모 칸이 없습니다. 송금 화면 하단의 [받는 분 내역 표시]를 눌러 예약번호 ' + reservationId + '를 입력해 주세요. 미입력 시 카카오 이름으로만 표시되어 입금 확인이 지연될 수 있습니다.',
+      noticeEn: '※ KakaoPay may not auto-fill the amount and does not have a standard transfer memo field. Please tap [받는 분 내역 표시] on the transfer screen and enter your Reservation ID ' + reservationId + '.',
       ko: [
         '카카오페이 송금 링크:',
-        link
+        link,
+        '',
+        '카카오페이 입력 안내',
+        '1. 송금 화면에서 금액 20,000원을 직접 입력해 주세요.',
+        '2. 화면 하단의 [받는 분 내역 표시]를 눌러 주세요.',
+        '3. 받는 분 내역 표시 칸에 예약번호를 입력해 주세요: ' + reservationId,
+        '※ 미입력 시 카카오 이름으로만 표시되어 입금 확인이 지연될 수 있습니다.'
       ].join('\n'),
       en: [
         'KakaoPay link:',
-        link
+        link,
+        '',
+        'KakaoPay note guide:',
+        '1. Enter ₩20,000 manually on the transfer screen.',
+        '2. Tap [받는 분 내역 표시] near the bottom of the screen.',
+        '3. Enter your Reservation ID: ' + reservationId,
+        'Payment confirmation may be delayed if this field is left blank.'
       ].join('\n')
     };
   }
