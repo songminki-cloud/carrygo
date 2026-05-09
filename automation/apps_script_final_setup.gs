@@ -826,7 +826,7 @@ function buildPaymentInstructionsFinal_(paymentMethod, reservationId) {
       type: 'PAYPAL',
       amount_display: '$15',
       payment_note: reservationId,
-      paypal_link: getScriptPropertyFinal_('PAYPAL_LINK')
+      paypal_link: getScriptPropertyFinal_('PAYPAL_LINK') || 'https://paypal.me/carrygoseoul/15USD'
     };
   }
 
@@ -1218,7 +1218,7 @@ function buildPaymentInstructionEmailPaymentBlockFinal_(r) {
   }
 
   if (method === 'PAYPAL') {
-    const link = getScriptPropertyFinal_('PAYPAL_LINK') || '{{paypal_link}}';
+    const link = getScriptPropertyFinal_('PAYPAL_LINK') || 'https://paypal.me/carrygoseoul/15USD';
     return {
       methodLabel: 'PayPal',
       link: link,
