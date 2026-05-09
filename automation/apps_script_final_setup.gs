@@ -1154,10 +1154,15 @@ function buildPaymentInstructionEmailHtmlFinal_(r) {
   const amount = formatAmountDisplayFinal_(r);
   const amountText = String(amount || '').replace('₩', '') + (String(amount || '').indexOf('₩') === 0 ? '원' : '');
   const reservationId = escapeHtmlFinal_(r.reservation_id);
-  const isKakao = String(r.payment_method || '').toUpperCase() === 'KAKAOPAY';
+  const method = String(r.payment_method || '').toUpperCase();
+  const isKakao = method === 'KAKAOPAY';
+  const isPaypal = method === 'PAYPAL';
   const notice = isKakao
     ? '<div style="margin-top:14px;padding:13px 14px;border:1.5px solid #b00020;border-radius:12px;background:#fff7f5;color:#8f1d1d;font-size:14px;line-height:1.55;font-weight:800;">카카오페이에서 금액이 자동 입력되지 않을 수 있습니다.<br>송금 화면에서 <strong>20000</strong>을 직접 입력하고, 송금 메모/메시지에 <strong>' + reservationId + '</strong>를 입력해 주세요.</div>'
-    : '<div style="margin-top:14px;padding:13px 14px;border:1px solid #ddd;border-radius:12px;background:#fafafa;color:#333;font-size:14px;line-height:1.55;font-weight:750;">결제 메모에 예약번호 <strong>' + reservationId + '</strong>를 입력해 주세요.</div>';
+    : isPaypal
+      ? '<div style="margin-top:14px;padding:13px 14px;border:1px solid #ddd;border-radius:12px;background:#fafafa;color:#333;font-size:14px;line-height:1.55;font-weight:750;">PayPal 인보이스를 예약 시 입력한 이메일로 30분 이내 발송합니다.<br>결제 확인 후 QR 코드와 장소 안내를 보내드립니다.</div>'
+      : '<div style="margin-top:14px;padding:13px 14px;border:1px solid #ddd;border-radius:12px;background:#fafafa;color:#333;font-size:14px;line-height:1.55;font-weight:750;">입금자명 또는 메모에 예약번호 <strong>' + reservationId + '</strong>를 입력해 주세요.</div>';
+  const memoLabel = isPaypal ? '인보이스 기준 예약번호' : '송금메모/메시지';
 
   return [
     '<div style="margin:0;padding:0;background:#f7f2ea;font-family:Arial,\'Apple SD Gothic Neo\',\'Noto Sans KR\',sans-serif;color:#111;">',
@@ -1171,7 +1176,7 @@ function buildPaymentInstructionEmailHtmlFinal_(r) {
     '<div style="font-size:17px;line-height:1.7;font-weight:850;">',
     '결제금액: <span style="font-size:24px;font-weight:950;">' + escapeHtmlFinal_(amountText) + '</span><br>',
     '결제방법: ' + escapeHtmlFinal_(paymentBlock.methodLabel) + '<br>',
-    '송금메모/메시지: <span style="font-size:18px;font-weight:950;">' + reservationId + '</span>',
+    escapeHtmlFinal_(memoLabel) + ': <span style="font-size:18px;font-weight:950;">' + reservationId + '</span>',
     '</div>',
     '</div>',
     notice,
