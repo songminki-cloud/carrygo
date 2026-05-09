@@ -41,8 +41,11 @@ Pickup time: [10:30]
 Return time: [22:30]
 Amount: [$15]
 
-Please complete your payment through the PayPal invoice link below:
-[PayPal invoice link]
+Please complete your payment using the PayPal link below:
+https://paypal.me/carrygoseoul/15USD
+
+Please include your Reservation ID in the PayPal note/message.
+If the PayPal link does not work in your country, contact us and we will send a PayPal invoice manually.
 
 Your reservation is confirmed only after payment is completed.
 Payment must be completed within 2 hours after receiving this message. If you need to change your time, quantity, or payment method before payment, please do not pay for the current request and submit a new request.

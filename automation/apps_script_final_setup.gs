@@ -826,7 +826,7 @@ function buildPaymentInstructionsFinal_(paymentMethod, reservationId) {
       type: 'PAYPAL',
       amount_display: '$15',
       payment_note: reservationId,
-      paypal_link: ''
+      paypal_link: getScriptPropertyFinal_('PAYPAL_LINK') || 'https://paypal.me/carrygoseoul/15USD'
     };
   }
 
@@ -1223,19 +1223,23 @@ function buildPaymentInstructionEmailPaymentBlockFinal_(r) {
   }
 
   if (method === 'PAYPAL') {
+    const link = getScriptPropertyFinal_('PAYPAL_LINK') || 'https://paypal.me/carrygoseoul/15USD';
     return {
       methodLabel: 'PayPal',
-      link: '',
-      buttonLabel: '',
-      noticeKo: '※ PayPal 인보이스를 예약 시 입력한 이메일로 30분 이내 발송합니다. 결제 확인 후 QR과 장소 안내를 보내드립니다.',
-      noticeEn: '※ We will send a PayPal invoice to your email within 30 minutes. Your QR code and pickup guide will be sent after payment is confirmed.',
+      link: link,
+      buttonLabel: 'Pay with PayPal',
+      noticeKo: '※ PayPal 링크로 결제해 주세요. 결제 메모에 예약번호 ' + reservationId + '를 입력해 주세요. 링크가 작동하지 않으면 help@carrygoseoul.com 으로 연락해 주세요.',
+      noticeEn: '※ Please complete your payment using the PayPal link below. Include your Reservation ID ' + reservationId + ' in the PayPal note/message. If the link does not work in your country, contact us and we will send a PayPal invoice manually. Your QR code and pickup guide will be sent after payment is confirmed.',
       ko: [
-        'PayPal 인보이스를 이메일로 보내드립니다.',
-        '인보이스 발송 기준 예약번호: ' + reservationId
+        'PayPal 결제 링크:',
+        link,
+        '결제 메모: ' + reservationId
       ].join('\n'),
       en: [
-        'A PayPal invoice will be sent to your email.',
-        'Reservation ID: ' + reservationId
+        'PayPal payment link:',
+        link,
+        'Please include your Reservation ID in the PayPal note/message: ' + reservationId,
+        'If the link does not work in your country, contact us and we will send a PayPal invoice manually.'
       ].join('\n')
     };
   }
