@@ -1168,11 +1168,12 @@ function buildPaymentInstructionEmailHtmlFinal_(r) {
   const paymentInfoHtml = method === 'BANK'
     ? [
       '결제금액: <span style="font-size:24px;font-weight:950;">' + escapeHtmlFinal_(amountText) + '</span><br>',
-      '결제방법: Bank Transfer<br>',
+      '결제방법: 계좌이체<br>',
+      '송금 메모: <span style="font-size:18px;font-weight:950;">' + reservationId + '</span><br>',
       '은행: 신한은행<br>',
       '계좌번호: <span style="font-size:20px;font-weight:950;">' + escapeHtmlFinal_(bankAccountNo) + '</span><br>',
       '예금주: <span style="font-size:18px;font-weight:950;">' + escapeHtmlFinal_(bankHolder) + '</span><br>',
-      '송금 메모: <span style="font-size:18px;font-weight:950;">' + reservationId + '</span>'
+      '<span style="font-size:13px;color:#666;font-weight:750;">메모 입력이 어렵다면 예약자 이름으로 입금해 주세요.</span>'
     ].join('')
     : [
       '결제금액: <span style="font-size:24px;font-weight:950;">' + escapeHtmlFinal_(amountText) + '</span><br>',
@@ -1262,27 +1263,28 @@ function buildPaymentInstructionEmailPaymentBlockFinal_(r) {
     const accountNo = getScriptPropertyFinal_('BANK_ACCOUNT_NO') || '{{bank_account}}';
     const holder = getScriptPropertyFinal_('BANK_ACCOUNT_HOLDER') || '{{account_holder}}';
     return {
-      methodLabel: 'Bank Transfer',
+      methodLabel: '계좌이체',
       link: '',
-      noticeKo: '※ 송금 메모에 예약번호 ' + reservationId + '를 입력해 주세요.',
-      noticeEn: '※ Please add your Reservation ID ' + reservationId + ' in the transfer memo.',
+      noticeKo: '※ 송금 메모 입력이 가능하면 예약번호 ' + reservationId + '를 입력해 주세요. 메모 입력이 어렵다면 예약자 이름으로 입금해 주세요.',
+      noticeEn: '',
       ko: [
-        '계좌이체 / Bank Transfer',
+        '계좌이체',
         '결제금액: ₩20,000',
         '송금 메모: ' + reservationId,
         '은행: 신한은행',
         '계좌번호: ' + accountNo,
-        '예금주: ' + holder + ' (CarryGo 운영자)'
+        '예금주: ' + holder + ' (CarryGo 운영자)',
+        '※ 송금 메모 입력이 어렵다면 예약자 이름으로 입금해 주세요.'
       ].join('\n'),
       en: [
-        'Bank Transfer',
+        '계좌이체',
         'Amount: ₩20,000',
         'Transfer memo: ' + reservationId,
         'Bank: SHINHAN BANK',
         'Account No.: ' + accountNo,
         'Account Holder: ' + holder + ' (CarryGo operator)',
         '',
-        'If you need international bank transfer information, please contact CarryGo.'
+        'If entering a transfer memo is difficult, please send payment under the reservation name.'
       ].join('\n')
     };
   }
