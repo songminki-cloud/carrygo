@@ -1173,7 +1173,7 @@ function buildPaymentInstructionEmailHtmlFinal_(r) {
       '은행: 신한은행<br>',
       '계좌번호: <span style="font-size:20px;font-weight:950;">' + escapeHtmlFinal_(bankAccountNo) + '</span><br>',
       '예금주: <span style="font-size:18px;font-weight:950;">' + escapeHtmlFinal_(bankHolder) + '</span><br>',
-      '<span style="font-size:13px;color:#666;font-weight:750;">입금 확인을 위해 송금 메모에 예약번호를 남겨 주세요.<br>입금자명이 예약자명과 다를 경우 확인이 지연될 수 있습니다.</span>'
+      '<span style="font-size:13px;color:#666;font-weight:750;">빠른 입금 확인을 위해 송금 메모에 예약번호를 남겨 주세요.<br>입금자명이 예약자명과 다를 경우 확인이 지연될 수 있습니다.</span>'
     ].join('')
     : [
       '결제금액: <span style="font-size:24px;font-weight:950;">' + escapeHtmlFinal_(amountText) + '</span><br>',
@@ -1265,7 +1265,7 @@ function buildPaymentInstructionEmailPaymentBlockFinal_(r) {
     return {
       methodLabel: '계좌이체',
       link: '',
-      noticeKo: '※ 입금 확인을 위해 송금 메모에 예약번호 ' + reservationId + '를 남겨 주세요. 입금자명이 예약자명과 다를 경우 확인이 지연될 수 있습니다.',
+      noticeKo: '※ 빠른 입금 확인을 위해 송금 메모에 예약번호 ' + reservationId + '를 남겨 주세요. 입금자명이 예약자명과 다를 경우 확인이 지연될 수 있습니다.',
       noticeEn: '',
       ko: [
         '계좌이체',
