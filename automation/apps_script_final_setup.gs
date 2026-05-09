@@ -1155,11 +1155,9 @@ function buildPaymentInstructionEmailHtmlFinal_(r) {
   const method = String(r.payment_method || '').toUpperCase();
   const isKakao = method === 'KAKAOPAY';
   const isPaypal = method === 'PAYPAL';
-  const notice = isKakao
-    ? '<div style="margin-top:14px;padding:14px 15px;border:1.7px solid #111;border-radius:13px;background:#fff8d9;color:#111;font-size:14px;line-height:1.62;font-weight:850;"><div style="font-size:12px;font-weight:950;letter-spacing:.08em;text-transform:uppercase;color:#8f6b00;margin-bottom:7px;">KakaoPay memo guide</div><strong style="font-size:16px;">카카오페이에는 송금 메모 칸이 없습니다.</strong><br>송금 화면 하단의 <strong>[받는 분 내역 표시]</strong>를 눌러 아래 예약번호를 입력해 주세요.<div style="margin:10px 0 8px;padding:10px 12px;border:1.4px dashed #111;border-radius:10px;background:#fff;font-size:13px;color:#777;font-weight:900;letter-spacing:.04em;">복사용 예약번호<br><span style="display:inline-block;margin-top:3px;font-size:20px;color:#111;font-weight:950;letter-spacing:.02em;">' + reservationId + '</span></div><span style="color:#6b5a20;font-size:13px;">미입력 시 카카오 이름으로만 표시되어 입금 확인이 지연될 수 있습니다.</span></div>'
-    : isPaypal
-      ? '<div style="margin-top:14px;padding:13px 14px;border:1px solid #ddd;border-radius:12px;background:#fafafa;color:#333;font-size:14px;line-height:1.55;font-weight:750;">PayPal 링크로 결제해 주세요.<br>PayPal 메모/메시지에 예약번호 <strong>' + reservationId + '</strong>를 입력해 주세요.<br>링크가 작동하지 않으면 help@carrygoseoul.com 으로 연락해 주세요. 수동 인보이스로 도와드리겠습니다.</div>'
-      : '';
+  const notice = isPaypal
+    ? '<div style="margin-top:14px;padding:13px 14px;border:1px solid #ddd;border-radius:12px;background:#fafafa;color:#333;font-size:14px;line-height:1.55;font-weight:750;">PayPal 링크로 결제해 주세요.<br>PayPal 메모/메시지에 예약번호 <strong>' + reservationId + '</strong>를 입력해 주세요.<br>링크가 작동하지 않으면 help@carrygoseoul.com 으로 연락해 주세요. 수동 인보이스로 도와드리겠습니다.</div>'
+    : '';
   const memoLabel = isPaypal ? 'PayPal 메모/메시지' : (isKakao ? '받는 분 내역 표시' : '송금메모/메시지');
   const bankAccountNo = getScriptPropertyFinal_('BANK_ACCOUNT_NO') || '{{bank_account}}';
   const bankHolder = (getScriptPropertyFinal_('BANK_ACCOUNT_HOLDER') || '{{account_holder}}') + ' (CarryGo 운영자)';
@@ -1171,15 +1169,24 @@ function buildPaymentInstructionEmailHtmlFinal_(r) {
       '은행: 신한은행<br>',
       '계좌번호: <span style="font-size:20px;font-weight:950;">' + escapeHtmlFinal_(bankAccountNo) + '</span><br>',
       '예금주: <span style="font-size:18px;font-weight:950;">' + escapeHtmlFinal_(bankHolder) + '</span><br>',
-      '<span style="font-size:13px;color:#666;font-weight:750;">빠른 입금 확인을 위해 송금 메모에 예약번호를 남겨 주세요.<br>입금자명이 예약자명과 다를 경우 확인이 지연될 수 있습니다.</span>',
-      '<div style="margin-top:12px;padding:10px 12px;border:1.3px dashed #111;border-radius:10px;background:#fff;font-size:13px;color:#777;font-weight:900;letter-spacing:.04em;">복사용 예약번호<br><span style="display:inline-block;margin-top:3px;font-size:20px;color:#111;font-weight:950;letter-spacing:.02em;">' + reservationId + '</span></div>'
+      '<span style="font-size:13px;color:#666;font-weight:750;">빠른 입금 확인을 위해 송금 메모에 예약번호를 남겨 주세요.<br>입금자명이 예약자명과 다를 경우 확인이 지연될 수 있습니다.</span>'
     ].join('')
-    : [
-      '결제금액: <span style="font-size:24px;font-weight:950;">' + escapeHtmlFinal_(amountText) + '</span><br>',
-      '결제방법: ' + escapeHtmlFinal_(paymentBlock.methodLabel) + '<br>',
-      escapeHtmlFinal_(memoLabel) + ': <span style="font-size:18px;font-weight:950;">' + reservationId + '</span>',
-      '<div style="margin-top:12px;padding:10px 12px;border:1.3px dashed #111;border-radius:10px;background:#fff;font-size:13px;color:#777;font-weight:900;letter-spacing:.04em;">복사용 예약번호<br><span style="display:inline-block;margin-top:3px;font-size:20px;color:#111;font-weight:950;letter-spacing:.02em;">' + reservationId + '</span></div>'
-    ].join('');
+    : isKakao
+      ? [
+        '결제금액: <span style="font-size:24px;font-weight:950;">' + escapeHtmlFinal_(amountText) + '</span><br>',
+        '결제방법: ' + escapeHtmlFinal_(paymentBlock.methodLabel) + '<br>',
+        '받는 분 내역 표시:<br>',
+        '<div style="margin-top:6px;margin-bottom:10px;padding:12px 13px;border:1.4px dashed #111;border-radius:12px;background:#fff;">',
+        '<span style="display:block;font-size:12px;color:#777;font-weight:900;letter-spacing:.04em;margin-bottom:4px;">예약번호 · 길게 눌러 복사</span>',
+        '<span style="display:block;font-size:22px;line-height:1.2;color:#111;font-weight:950;letter-spacing:.02em;">' + reservationId + '</span>',
+        '</div>',
+        '<div style="font-size:13px;line-height:1.5;color:#6b5a20;font-weight:800;">카카오페이에는 송금 메모 칸이 없습니다.<br>송금 화면 하단의 [받는 분 내역 표시]에 예약번호를 넣어 주세요.<br>미입력 시 카카오 이름으로만 표시되어 입금 확인이 지연될 수 있습니다.</div>'
+      ].join('')
+      : [
+        '결제금액: <span style="font-size:24px;font-weight:950;">' + escapeHtmlFinal_(amountText) + '</span><br>',
+        '결제방법: ' + escapeHtmlFinal_(paymentBlock.methodLabel) + '<br>',
+        escapeHtmlFinal_(memoLabel) + ': <span style="font-size:18px;font-weight:950;">' + reservationId + '</span>'
+      ].join('');
 
   return [
     '<div style="margin:0;padding:0;background:#f7f2ea;font-family:Arial,\'Apple SD Gothic Neo\',\'Noto Sans KR\',sans-serif;color:#111;">',
