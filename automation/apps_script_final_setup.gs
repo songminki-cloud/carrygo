@@ -613,10 +613,8 @@ function createWalkinReservationFinal(body) {
     const phoneFull = normalizePhoneFullFinal_(countryCode, phoneNumber);
     const tagNumbers = nextLuggageTagNumbersFinal_(suitcaseCount + extraBagCount, concert.concert_id);
     const consentFlags = 'HARDCOPY_CONFIRMED=' + String(body.hardcopy_confirmed || 'NO').trim().toUpperCase();
-    if (String(body.hardcopy_confirmed || '').trim().toUpperCase() !== 'YES') throw new Error('hardcopy confirmation is required');
-    if (String(body.onsite_cash_received || '').trim().toUpperCase() !== 'YES') throw new Error('cash received confirmation is required');
-    if (String(body.onsite_tag_attached || '').trim().toUpperCase() !== 'YES') throw new Error('tag attachment confirmation is required');
-    if (String(body.onsite_photo_taken || '').trim().toUpperCase() !== 'YES') throw new Error('photo confirmation is required');
+    if (String(body.hardcopy_confirmed || '').trim().toUpperCase() !== 'YES') throw new Error('storage consent confirmation is required');
+    if (String(body.onsite_cash_received || '').trim().toUpperCase() !== 'YES') throw new Error('cash payment confirmation is required');
 
     const rowObject = {
       reservation_id: reservationId,
@@ -670,8 +668,8 @@ function createWalkinReservationFinal(body) {
       actual_extra_bag_count: extraBagCount,
       onsite_due_amount: paidAmount,
       onsite_cash_received: String(body.onsite_cash_received || 'NO').trim().toUpperCase(),
-      onsite_tag_attached: String(body.onsite_tag_attached || 'NO').trim().toUpperCase(),
-      onsite_photo_taken: String(body.onsite_photo_taken || 'NO').trim().toUpperCase(),
+      onsite_tag_attached: String(body.onsite_tag_attached || 'PENDING').trim().toUpperCase(),
+      onsite_photo_taken: String(body.onsite_photo_taken || 'PENDING').trim().toUpperCase(),
       onsite_checkin_completed_at: now
     };
 
@@ -1157,6 +1155,7 @@ function buildPaymentInstructionEmailHtmlFinal_(r) {
   const method = String(r.payment_method || '').toUpperCase();
   const isKakao = method === 'KAKAOPAY';
   const isPaypal = method === 'PAYPAL';
+  const logoUrl = 'https://www.carrygoseoul.com/assets/logo/carrygo_logo_final.png';
   const notice = isKakao
     ? '<div style="margin-top:14px;padding:14px 15px;border:1.7px solid #111;border-radius:13px;background:#fff8d9;color:#111;font-size:14px;line-height:1.62;font-weight:850;"><div style="font-size:12px;font-weight:950;letter-spacing:.08em;text-transform:uppercase;color:#8f6b00;margin-bottom:7px;">KakaoPay memo guide</div><strong style="font-size:16px;">카카오페이에는 송금 메모 칸이 없습니다.</strong><br>송금 화면 하단의 <strong>[받는 분 내역 표시]</strong>를 눌러<br><strong>' + reservationId + '</strong> 를 입력해 주세요.<br><span style="color:#6b5a20;font-size:13px;">미입력 시 카카오 이름으로만 표시되어 입금 확인이 지연될 수 있습니다.</span></div>'
     : isPaypal
@@ -1183,12 +1182,19 @@ function buildPaymentInstructionEmailHtmlFinal_(r) {
 
   return [
     '<div style="margin:0;padding:0;background:#f7f2ea;font-family:Arial,\'Apple SD Gothic Neo\',\'Noto Sans KR\',sans-serif;color:#111;">',
-    '<div style="max-width:560px;margin:0 auto;padding:18px;">',
-    '<div style="background:#fff;border:1.5px solid #111;border-radius:18px;padding:20px;">',
-    '<div style="font-size:13px;font-weight:900;letter-spacing:.06em;color:#8f1d1d;margin-bottom:10px;">신청이 접수되었습니다</div>',
+    '<div style="max-width:560px;margin:0 auto;padding:22px 16px;">',
+    '<div style="text-align:center;margin:0 0 14px;">',
+    '<img src="' + logoUrl + '" alt="CarryGo" width="150" style="display:inline-block;width:150px;max-width:46%;height:auto;border:0;outline:none;text-decoration:none;mix-blend-mode:multiply;">',
+    '</div>',
+    '<div style="background:#fff;border:1.7px solid #111;border-radius:22px;overflow:hidden;box-shadow:0 10px 24px rgba(17,17,17,.06);">',
+    '<div style="background:#111;color:#fff;padding:16px 18px 15px;">',
+    '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#d8d0c4;margin-bottom:7px;">CarryGo Seoul</div>',
+    '<div style="font-size:24px;line-height:1.25;font-weight:900;letter-spacing:-.035em;">신청이 접수되었습니다</div>',
+    '</div>',
+    '<div style="padding:20px;">',
     '<div style="font-size:24px;line-height:1.28;font-weight:900;letter-spacing:-.035em;margin-bottom:10px;">예약 확정을 위해<br>기본 이용료를 결제해 주세요.</div>',
     '<div style="font-size:15px;line-height:1.55;color:#444;font-weight:750;margin-bottom:18px;">결제 확인 후 QR 코드와 짐 맡기기/찾기 안내 링크를 이메일로 보내드립니다.</div>',
-    '<div style="border:1.5px solid #111;border-radius:14px;padding:15px;background:#fff;margin-bottom:14px;">',
+    '<div style="border:1.6px solid #111;border-radius:16px;padding:15px;background:#fbf7ef;margin-bottom:14px;">',
     '<div style="font-size:12px;font-weight:900;color:#777;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px;">Payment</div>',
     '<div style="font-size:17px;line-height:1.7;font-weight:850;">',
     paymentInfoHtml,
@@ -1196,8 +1202,8 @@ function buildPaymentInstructionEmailHtmlFinal_(r) {
     '</div>',
     notice,
     paymentBlock.link ? '<a href="' + escapeHtmlFinal_(paymentBlock.link || '') + '" style="display:block;text-align:center;background:#111;color:#fff;text-decoration:none;border-radius:999px;padding:15px 14px;font-size:17px;font-weight:900;margin:16px 0;">' + escapeHtmlFinal_(paymentBlock.buttonLabel || '결제하기') + '</a>' : '',
-    '<div style="margin-top:20px;border-top:1px solid #ddd;padding-top:15px;">',
-    '<div style="font-size:15px;font-weight:900;margin-bottom:8px;">예약 정보</div>',
+    '<div style="margin-top:20px;border:1px solid #ded6ca;border-radius:15px;background:#fff;padding:15px;">',
+    '<div style="font-size:12px;font-weight:900;color:#777;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px;">Reservation</div>',
     '<div style="font-size:14px;line-height:1.65;color:#333;font-weight:700;">',
     '예약번호: ' + reservationId + '<br>',
     '콘서트: ' + escapeHtmlFinal_(r.concert_title) + '<br>',
@@ -1206,9 +1212,10 @@ function buildPaymentInstructionEmailHtmlFinal_(r) {
     '짐 맡기는 시간: ' + escapeHtmlFinal_(formatKoreanTimeFinal_(r.pickup_time || '')) + ' <span style="color:#777;">(30분 전부터 접수, 정시 마감)</span>',
     '</div>',
     '</div>',
-    '<div style="margin-top:15px;font-size:12px;line-height:1.55;color:#666;font-weight:650;">포함 사항: 기본요금 20,000원(캐리어 1개 보관) / 선택 시간 짐 맡기기 / 공연 종료 후 2시간 이내 수령<br>현장 추가 결제: 추가 캐리어 1개당 20,000원, 추가 짐은 가방 1개당 10,000원. 한화가 없으면 추가 짐은 $10. 지퍼 및 잠금장치가 있는 가방에 한합니다. 쇼핑백·비닐봉투 등 쉽게 찢어지는 짐은 맡기실 수 없습니다.</div>',
+    '<div style="margin-top:15px;border-top:1px dashed #cfc7bc;padding-top:14px;font-size:12px;line-height:1.55;color:#666;font-weight:650;">포함 사항: 기본요금 20,000원(캐리어 1개 보관) / 선택 시간 짐 맡기기 / 공연 종료 후 2시간 이내 수령<br>현장 추가 결제: 추가 캐리어 1개당 20,000원, 추가 짐은 가방 1개당 10,000원. 한화가 없으면 추가 짐은 $10. 지퍼 및 잠금장치가 있는 가방에 한합니다. 쇼핑백·비닐봉투 등 쉽게 찢어지는 짐은 맡기실 수 없습니다.</div>',
     '</div>',
-    '<div style="font-size:12px;color:#777;line-height:1.5;margin-top:14px;text-align:center;">CarryGo</div>',
+    '</div>',
+    '<div style="font-size:12px;color:#777;line-height:1.5;margin-top:14px;text-align:center;font-weight:700;">CarryGo Seoul · Luggage drop-off for concert days</div>',
     '</div>',
     '</div>'
   ].join('');
