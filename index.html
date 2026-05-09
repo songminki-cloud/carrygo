@@ -27,7 +27,7 @@
   <header class="topbar">
     <img class="logo-lockup" src="assets/logo/carrygo_logo_final.png" alt="CARRYGO Seoul">
     <div class="top-actions">
-      <nav class="lang-tabs" aria-label="language tabs"><button class="active" type="button">KR</button><button type="button" disabled>EN</button><button type="button" disabled>中</button><button type="button" disabled>JP</button></nav>
+      <nav class="lang-tabs" aria-label="translation help"><button id="translateHelpBtn" class="active" type="button">🌐 Translate</button></nav>
     </div>
   </header>
 
@@ -161,6 +161,10 @@ function updateEmailSuggest(){const input=document.getElementById('customerEmail
 document.getElementById('customerEmail').addEventListener('input',updateEmailSuggest);
 function showEmailConfirm({kicker='Email Check',title='이메일을 확인해 주세요.',copy='예약 확정메일과 QR이 아래 이메일로 전송됩니다.',value='',cancelLabel='다시 입력',okLabel='맞아요',copyable=false}={}){return new Promise(resolve=>{const layer=document.getElementById('emailConfirmLayer');document.getElementById('emailConfirmKicker').textContent=kicker;document.getElementById('emailConfirmTitle').textContent=title;const copyBox=document.getElementById('emailConfirmCopy');copyBox.textContent=copy;copyBox.style.whiteSpace='pre-line';const valueBox=document.getElementById('emailConfirmValue');valueBox.innerHTML='';valueBox.classList.toggle('copyable',!!(copyable&&value));valueBox.style.display=value?'flex':'none';if(value){const valueText=document.createElement('span');valueText.className='confirm-value-text';valueText.textContent=value;valueBox.appendChild(valueText);if(copyable){const copyBtn=document.createElement('button');copyBtn.type='button';copyBtn.className='confirm-copy-btn';copyBtn.textContent='복사';copyBtn.setAttribute('aria-label','예약번호 복사');copyBtn.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(value);copyBtn.textContent='복사됨'}catch(e){copyBtn.textContent='길게 눌러 복사'}});valueBox.appendChild(copyBtn)}}const cancel=document.getElementById('emailConfirmCancel');const ok=document.getElementById('emailConfirmOk');cancel.textContent=cancelLabel;ok.textContent=okLabel;cancel.style.display=cancelLabel?'block':'none';cancel.parentElement.style.gridTemplateColumns=cancelLabel?'1fr 1fr':'1fr';function close(result){layer.hidden=true;cancel.removeEventListener('click',onCancel);ok.removeEventListener('click',onOk);document.removeEventListener('keydown',onKey);resolve(result)}function onCancel(){close(false)}function onOk(){close(true)}function onKey(e){if(e.key==='Escape')close(false)}cancel.addEventListener('click',onCancel);ok.addEventListener('click',onOk);document.addEventListener('keydown',onKey);layer.hidden=false;setTimeout(()=>ok.focus(),0)})}
 function confirmEmailBeforeSubmit(email){return showEmailConfirm({title:'이메일을 한 번 더 확인해 주세요.',copy:'예약 확정메일과 QR이 아래 이메일로 전송됩니다.',value:email,cancelLabel:'다시 입력',okLabel:'맞아요'})}
+document.getElementById('translateHelpBtn')?.addEventListener('click',()=>showEmailConfirm({kicker:'Translation Help',title:'브라우저 번역으로 볼 수 있어요.',copy:`This page is provided in Korean.
+For English, 日本語, or 中文, please use your browser translation feature.
+
+If you opened this page inside Instagram, open it in Chrome or Safari and tap Translate.`,value:'',cancelLabel:'',okLabel:'확인'}));
 function validateReservationFormBeforeSubmit(form,data){
   const messages=[];let first=null;
   const byId=id=>document.getElementById(id);
