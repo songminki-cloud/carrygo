@@ -1173,7 +1173,7 @@ function buildPaymentInstructionEmailHtmlFinal_(r) {
       '은행: 신한은행<br>',
       '계좌번호: <span style="font-size:20px;font-weight:950;">' + escapeHtmlFinal_(bankAccountNo) + '</span><br>',
       '예금주: <span style="font-size:18px;font-weight:950;">' + escapeHtmlFinal_(bankHolder) + '</span><br>',
-      '<span style="font-size:13px;color:#666;font-weight:750;">송금 메모에는 예약번호를 입력해 주세요.<br>입금자명과 예약자명이 동일하면 더 빠르게 확인할 수 있습니다.</span>'
+      '<span style="font-size:13px;color:#666;font-weight:750;">입금 확인을 위해 송금 메모에 예약번호를 남겨 주세요.<br>입금자명이 예약자명과 다를 경우 확인이 지연될 수 있습니다.</span>'
     ].join('')
     : [
       '결제금액: <span style="font-size:24px;font-weight:950;">' + escapeHtmlFinal_(amountText) + '</span><br>',
@@ -1265,7 +1265,7 @@ function buildPaymentInstructionEmailPaymentBlockFinal_(r) {
     return {
       methodLabel: '계좌이체',
       link: '',
-      noticeKo: '※ 송금 메모에는 예약번호 ' + reservationId + '를 입력해 주세요. 입금자명과 예약자명이 동일하면 더 빠르게 확인할 수 있습니다.',
+      noticeKo: '※ 입금 확인을 위해 송금 메모에 예약번호 ' + reservationId + '를 남겨 주세요. 입금자명이 예약자명과 다를 경우 확인이 지연될 수 있습니다.',
       noticeEn: '',
       ko: [
         '계좌이체',
@@ -1274,7 +1274,7 @@ function buildPaymentInstructionEmailPaymentBlockFinal_(r) {
         '은행: 신한은행',
         '계좌번호: ' + accountNo,
         '예금주: ' + holder + ' (CarryGo 운영자)',
-        '※ 입금자명과 예약자명이 동일하면 더 빠르게 확인할 수 있습니다.'
+        '※ 입금자명이 예약자명과 다를 경우 확인이 지연될 수 있습니다.'
       ].join('\n'),
       en: [
         '계좌이체',
@@ -1284,7 +1284,7 @@ function buildPaymentInstructionEmailPaymentBlockFinal_(r) {
         'Account No.: ' + accountNo,
         'Account Holder: ' + holder + ' (CarryGo operator)',
         '',
-        'Payment can be confirmed faster if the sender name matches the reservation name.'
+        'Payment confirmation may be delayed if the sender name does not match the reservation name.'
       ].join('\n')
     };
   }
