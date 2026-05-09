@@ -635,7 +635,7 @@ function createWalkinReservationFinal(body) {
       customer_country: String(body.customer_country || 'WALK_IN').trim(),
       country_code: countryCode,
       customer_name: requiredStringFinal_(body.customer_name, 'customer_name'),
-      customer_email: String(body.customer_email || '').trim(),
+      customer_email: normalizeEmailFinal_(body.customer_email),
       phone_number: phoneNumber,
       phone_full: phoneFull,
       payment_method: 'CASH',
@@ -677,6 +677,15 @@ function createWalkinReservationFinal(body) {
     sh.appendRow(RESERVATIONS_HEADERS.map(header => rowObject[header] !== undefined ? rowObject[header] : ''));
     applySheetFormatsFinal_(sh, CARRYGO_SHEETS.RESERVATIONS, RESERVATIONS_HEADERS);
 
+    let emailSent = false;
+    let emailError = '';
+    try {
+      sendWalkinConfirmationEmailFinal_(rowObject);
+      emailSent = true;
+    } catch (mailErr) {
+      emailError = String(mailErr && mailErr.message ? mailErr.message : mailErr);
+    }
+
     return {
       reservation_id: rowObject.reservation_id,
       status: rowObject.status,
@@ -691,11 +700,150 @@ function createWalkinReservationFinal(body) {
       phone_full: rowObject.phone_full,
       expected_suitcase_count: rowObject.expected_suitcase_count,
       expected_extra_bag_count: rowObject.expected_extra_bag_count,
-      luggage_tag_numbers: rowObject.luggage_tag_numbers
+      luggage_tag_numbers: rowObject.luggage_tag_numbers,
+      email_sent: emailSent,
+      email_error: emailError
     };
   } finally {
     lock.releaseLock();
   }
+}
+
+
+function sendWalkinConfirmationEmailFinal_(reservation) {
+  if (!reservation || !reservation.customer_email) throw new Error('customer_email is required for walk-in email');
+
+  MailApp.sendEmail({
+    to: reservation.customer_email,
+    subject: '[CarryGo] 현장 접수가 완료되었습니다 / Walk-in Drop-off Confirmed',
+    body: buildWalkinConfirmationEmailBodyFinal_(reservation),
+    htmlBody: buildWalkinConfirmationEmailHtmlFinal_(reservation),
+    name: 'CarryGo'
+  });
+}
+
+function buildWalkinGuideTextFinal_(reservation) {
+  const guideLink = getConcertDateLinkFinal_(reservation.concert_date_id, 'pickup_drop_guide_link');
+  if (guideLink) return guideLink;
+  return '짐 찾는 곳은 현장에서 안내받은 장소를 기준으로 확인해 주세요. 위치나 시간이 바뀌면 이메일로 다시 안내합니다.';
+}
+
+function buildWalkinGuideHtmlFinal_(reservation) {
+  const guideLink = getConcertDateLinkFinal_(reservation.concert_date_id, 'pickup_drop_guide_link');
+  if (guideLink) {
+    const safeLink = escapeHtmlFinal_(guideLink);
+    return '<a href="' + safeLink + '" style="display:block;text-align:center;background:#111;color:#fff;text-decoration:none;border-radius:999px;padding:15px 14px;font-size:16px;font-weight:900;margin-top:12px;">짐 맡기는 곳 / 짐 찾는 곳 확인하기</a>' +
+      '<div style="font-size:13px;line-height:1.5;color:#666;font-weight:750;margin-top:9px;">공연 당일 위치가 바뀔 수 있으니, 짐을 찾기 전 한 번 더 확인해 주세요.<br>Pickup location may change on the concert day. Please check again before pickup.</div>';
+  }
+  return '<div style="margin-top:12px;border:1.4px solid #111;border-radius:15px;background:#fff7d8;padding:13px 14px;font-size:14px;line-height:1.55;color:#111;font-weight:850;">짐 찾는 곳은 현장에서 안내받은 장소를 기준으로 확인해 주세요.<br>위치나 시간이 바뀌면 이메일로 다시 안내합니다.</div>';
+}
+
+function buildWalkinConfirmationEmailBodyFinal_(r) {
+  const amount = '₩' + Number(r.paid_amount || r.base_fee || 0).toLocaleString('ko-KR');
+  const guide = buildWalkinGuideTextFinal_(r);
+
+  return [
+    '현장 접수가 완료되었습니다.',
+    '',
+    '아래 태그번호와 짐 수량을 확인해 주세요.',
+    '',
+    '태그번호: ' + r.luggage_tag_numbers,
+    '캐리어: ' + r.expected_suitcase_count + '개',
+    '추가 짐: ' + r.expected_extra_bag_count + '개',
+    '결제금액: ' + amount,
+    '',
+    '공연 정보',
+    '- 콘서트: ' + r.concert_title,
+    '- 공연일: ' + r.concert_date + ' ' + r.concert_time,
+    '- 장소: ' + r.venue,
+    '',
+    '짐 맡기는 곳 / 짐 찾는 곳:',
+    guide,
+    '',
+    '짐 찾기 전 위 안내를 다시 확인해 주세요. 공연 당일 위치나 시간이 바뀔 수 있습니다.',
+    '',
+    '주의사항',
+    '- 공연 종료 후 2시간 이내에 찾아가 주세요.',
+    '- 시간 내 수령하지 못한 경우, 미수령 1일당 추가 보관 및 운영 비용 30,000원이 부과됩니다.',
+    '- 대리수령은 불가합니다.',
+    '- 귀중품은 직접 보관해 주세요.',
+    '',
+    'CarryGo',
+    '',
+    '---',
+    '',
+    'Your walk-in drop-off is confirmed.',
+    '',
+    'Please check your tag numbers and item count below.',
+    '',
+    'Tag numbers: ' + r.luggage_tag_numbers,
+    'Suitcase: ' + r.expected_suitcase_count,
+    'Extra bag: ' + r.expected_extra_bag_count,
+    'Amount paid: ' + amount,
+    '',
+    'Concert Info',
+    '- Concert: ' + r.concert_title,
+    '- Date & Time: ' + r.concert_date + ' ' + r.concert_time,
+    '- Venue: ' + r.venue,
+    '',
+    'Drop-off / Pickup guide:',
+    guide,
+    '',
+    'Please check the guide again before pickup. Location or time may change on the concert day.',
+    '',
+    'Important',
+    '- Please pick up within 2 hours after the concert ends.',
+    '- If not picked up within the guided time, an additional storage and operation fee of ₩30,000 per unclaimed day will be charged.',
+    '- Proxy pickup is not allowed.',
+    '- Keep valuables with you.',
+    '',
+    'CarryGo'
+  ].join('\n');
+}
+
+function buildWalkinConfirmationEmailHtmlFinal_(r) {
+  const amount = '₩' + Number(r.paid_amount || r.base_fee || 0).toLocaleString('ko-KR');
+  const tags = normalizeLuggageTagStringFinal_(r.luggage_tag_numbers || '').split(',').filter(Boolean);
+  const tagHtml = tags.map(tag => '<span style="display:inline-grid;place-items:center;min-width:58px;height:52px;border:1.4px solid #111;border-radius:14px;background:#fff;color:#111;font-size:28px;line-height:1;font-weight:950;letter-spacing:-.04em;margin:4px;">' + escapeHtmlFinal_(tag) + '</span>').join('');
+
+  return [
+    '<div style="margin:0;padding:0;background:#f7f2ea;font-family:Arial,\'Apple SD Gothic Neo\',\'Noto Sans KR\',sans-serif;color:#111;">',
+    '<div style="max-width:560px;margin:0 auto;padding:22px 16px;">',
+    '<div style="background:#fff;border:1.7px solid #111;border-radius:22px;overflow:hidden;box-shadow:0 10px 24px rgba(17,17,17,.06);">',
+    '<div style="background:#111;color:#fff;padding:16px 18px 15px;">',
+    '<div style="font-size:11px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#d8d0c4;margin-bottom:7px;">CarryGo Walk-in</div>',
+    '<div style="font-size:25px;line-height:1.25;font-weight:900;letter-spacing:-.035em;">현장 접수가 완료되었습니다</div>',
+    '<div style="font-size:14px;line-height:1.45;color:#d8d0c4;font-weight:750;margin-top:8px;">Your walk-in drop-off is confirmed.</div>',
+    '</div>',
+    '<div style="padding:20px;">',
+    '<div style="font-size:12px;font-weight:900;color:#777;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px;">Storage Ticket / Luggage Tag</div>',
+    '<div style="background:#111;border-radius:18px;padding:14px;text-align:center;margin-bottom:12px;">' + tagHtml + '</div>',
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">',
+    '<div style="border:1px solid #ded6ca;border-radius:14px;padding:11px;background:#fff;"><div style="font-size:10px;color:#777;font-weight:900;letter-spacing:.12em;text-transform:uppercase;">Suitcase</div><div style="font-size:22px;font-weight:950;margin-top:5px;">' + escapeHtmlFinal_(r.expected_suitcase_count) + '개</div></div>',
+    '<div style="border:1px solid #ded6ca;border-radius:14px;padding:11px;background:#fff;"><div style="font-size:10px;color:#777;font-weight:900;letter-spacing:.12em;text-transform:uppercase;">Extra bag</div><div style="font-size:22px;font-weight:950;margin-top:5px;">' + escapeHtmlFinal_(r.expected_extra_bag_count) + '개</div></div>',
+    '</div>',
+    '<div style="border:1.6px solid #111;border-radius:16px;padding:15px;background:#fbf7ef;margin-bottom:14px;">',
+    '<div style="font-size:12px;font-weight:900;color:#777;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px;">Payment</div>',
+    '<div style="font-size:24px;font-weight:950;">' + escapeHtmlFinal_(amount) + ' <span style="font-size:14px;color:#555;font-weight:800;">Cash paid</span></div>',
+    '</div>',
+    '<div style="margin-top:16px;border:1.6px solid #111;border-radius:18px;background:#fff;padding:16px;">',
+    '<div style="font-size:18px;line-height:1.35;font-weight:950;letter-spacing:-.02em;">짐 맡기는 곳 / 짐 찾는 곳</div>',
+    '<div style="font-size:13px;color:#666;font-weight:800;margin-top:3px;">Drop-off / Pickup guide</div>',
+    buildWalkinGuideHtmlFinal_(r),
+    '</div>',
+    '<div style="margin-top:16px;border:1px solid #ded6ca;border-radius:15px;background:#fff;padding:15px;font-size:14px;line-height:1.65;color:#333;font-weight:750;">',
+    '<strong>공연 정보</strong><br>',
+    '콘서트: ' + escapeHtmlFinal_(r.concert_title) + '<br>',
+    '공연일: ' + escapeHtmlFinal_(r.concert_date + ' ' + r.concert_time) + '<br>',
+    '장소: ' + escapeHtmlFinal_(r.venue),
+    '</div>',
+    '<div style="margin-top:15px;border-top:1px dashed #cfc7bc;padding-top:14px;font-size:12px;line-height:1.6;color:#666;font-weight:750;">공연 종료 후 2시간 이내에 찾아가 주세요. 시간 내 수령하지 못한 경우, 미수령 1일당 추가 보관 및 운영 비용 30,000원이 부과됩니다. 대리수령은 불가합니다. 귀중품은 직접 보관해 주세요.</div>',
+    '</div>',
+    '</div>',
+    '<div style="font-size:12px;color:#777;line-height:1.5;margin-top:14px;text-align:center;font-weight:700;">CarryGo Seoul · Walk-in luggage drop-off</div>',
+    '</div>',
+    '</div>'
+  ].join('');
 }
 
 function normalizeLuggageTagNumberFinal_(value) {
@@ -1564,8 +1712,10 @@ function testConfirmLatestReservationFinal() {
 // ===== CarryGo Final Check-in Page / HTML Email =====
 
 function buildReservationConfirmedEmailHtmlFinal_(r) {
-  const pickupLink = escapeHtmlFinal_(getConcertDateLinkFinal_(r.concert_date_id, 'pickup_drop_guide_link'));
+  const pickupLinkRaw = getConcertDateLinkFinal_(r.concert_date_id, 'pickup_drop_guide_link');
+  const pickupLink = escapeHtmlFinal_(pickupLinkRaw);
   const qrUrl = escapeHtmlFinal_(r.qr_checkin_url || '');
+  const pickupGuideHtml = buildWalkinGuideHtmlFinal_(r);
 
   return `
   <div style="font-family:Arial,Helvetica,sans-serif;max-width:640px;margin:0 auto;color:#111;line-height:1.5;">
@@ -1581,6 +1731,12 @@ function buildReservationConfirmedEmailHtmlFinal_(r) {
     <p style="font-size:14px;">QR이 보이지 않으면 아래 링크 또는 예약번호를 스태프에게 보여주세요. 고객이 링크 화면에서 직접 입력하거나 버튼을 누를 필요는 없습니다.<br/>If the QR code is not visible, show the link below or your Reservation ID to staff. Customers do not need to enter anything on the link screen.</p>
     <p><a href="${qrUrl}" style="color:#111;word-break:break-all;">${qrUrl}</a></p>
 
+    <div style="margin:22px 0;border:1.8px solid #111;border-radius:18px;background:#fff;padding:16px;">
+      <div style="font-size:20px;line-height:1.35;font-weight:950;letter-spacing:-.02em;">짐 맡기는 곳 / 짐 찾는 곳</div>
+      <div style="font-size:13px;color:#666;font-weight:800;margin-top:3px;">Drop-off / Pickup guide</div>
+      ${pickupGuideHtml}
+    </div>
+
     <hr style="border:none;border-top:1px solid #ddd;margin:24px 0;" />
 
     <table style="width:100%;border-collapse:collapse;font-size:14px;">
@@ -1593,7 +1749,7 @@ function buildReservationConfirmedEmailHtmlFinal_(r) {
     </table>
 
     <h3 style="margin-top:24px;">Luggage Drop-off/Pickup Guide / 짐 맡기기·찾기 안내</h3>
-    <p><a href="${pickupLink}" style="color:#111;word-break:break-all;">${pickupLink}</a></p>
+    <p>${pickupLinkRaw ? '<a href="' + pickupLink + '" style="color:#111;word-break:break-all;">' + pickupLink + '</a>' : '짐 찾는 곳은 현장에서 안내받은 장소를 기준으로 확인해 주세요. 위치나 시간이 바뀌면 이메일로 다시 안내합니다.'}</p>
 
     <h3 style="margin-top:24px;">Important / 중요 안내</h3>
     <ul style="padding-left:20px;">
