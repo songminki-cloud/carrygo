@@ -165,6 +165,34 @@ document.getElementById('translateHelpBtn')?.addEventListener('click',()=>showEm
 For English, 日本語, or 中文, please use your browser translation feature.
 
 If you opened this page inside Instagram, open it in Chrome or Safari and tap Translate.`,value:'',cancelLabel:'',okLabel:'확인'}));
+(function showAutoTranslationHelp(){
+  try{
+    const langs=(navigator.languages&&navigator.languages.length?navigator.languages:[navigator.language||'']).map(v=>String(v||'').toLowerCase());
+    const primary=langs[0]||'';
+    if(!primary||primary.startsWith('ko'))return;
+    if(sessionStorage.getItem('carrygoTranslateHelpShown')==='1')return;
+    sessionStorage.setItem('carrygoTranslateHelpShown','1');
+    let title='Need another language?';
+    let copy=`This page is provided in Korean.
+Please use your browser translation feature.
+
+If you opened this page inside Instagram, open it in Chrome or Safari and tap Translate.`;
+    if(primary.startsWith('ja')){
+      title='日本語で見るには';
+      copy=`このページは韓国語で提供されています。
+ブラウザの翻訳機能で日本語を選択してください。
+
+Instagram内で開いている場合は、ChromeまたはSafariで開いて翻訳を選択してください。`;
+    }else if(primary.startsWith('zh')){
+      title='如需查看中文';
+      copy=`此页面以韩语提供。
+请使用浏览器翻译功能并选择中文。
+
+如果您是在 Instagram 内打开，请用 Chrome 或 Safari 打开后选择翻译。`;
+    }
+    setTimeout(()=>showEmailConfirm({kicker:'Translation Help',title,copy,value:'',cancelLabel:'',okLabel:'OK'}),700);
+  }catch(e){}
+})();
 function validateReservationFormBeforeSubmit(form,data){
   const messages=[];let first=null;
   const byId=id=>document.getElementById(id);
