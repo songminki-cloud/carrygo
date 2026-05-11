@@ -1226,7 +1226,7 @@ function notifyNewReservationToTelegramFinal_(reservation) {
       '고객명: ' + reservation.customer_name,
       '이메일: ' + reservation.customer_email,
       '',
-      'Google Sheet에서 결제 입금 여부를 확인해 주세요.'
+      '어드민에서 결제 입금 여부를 확인해 주세요.'
     ].join('\n');
 
     UrlFetchApp.fetch('https://api.telegram.org/bot' + token + '/sendMessage', {
