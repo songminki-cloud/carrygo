@@ -846,7 +846,7 @@ function buildWalkinConfirmationEmailBodyFinal_(r) {
     '- 장소: ' + r.venue,
     '',
     '주의사항',
-    '- 공연 종료 후 2시간 이내에 돌려받으세요.',
+    '- 공연 종료 후 2시간 안에 보관증을 보여주고 짐을 돌려받아 주세요.',
     '- 시간 내 수령하지 못한 경우, 미수령 1일당 추가 보관 및 운영 비용 30,000원이 부과됩니다.',
     '- 대리수령은 불가합니다.',
     '- 귀중품은 직접 보관해 주세요.',
@@ -911,7 +911,7 @@ function buildWalkinConfirmationEmailHtmlFinal_(r) {
     '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;border-bottom:1px solid #d8d1c7;padding-bottom:12px;margin-bottom:12px;"><div style="font-size:13px;line-height:1.35;color:#4b453e;font-weight:850;">현장 현금 결제<br><span style="color:#59534c;font-weight:720;">Cash paid onsite</span></div><div style="font-size:27px;line-height:1;font-weight:950;letter-spacing:-.045em;white-space:nowrap;">' + escapeHtmlFinal_(amount) + '</div></div>',
     '<div style="font-size:14px;line-height:1.62;color:#302c27;font-weight:760;">예약번호: <strong>' + escapeHtmlFinal_(r.reservation_id || '') + '</strong><br>이름: ' + escapeHtmlFinal_(r.customer_name || '') + '</div>',
     '</div>',
-    '<div style="border-top:1px dashed #cfc7bc;margin-top:14px;padding-top:13px;font-size:12px;line-height:1.55;color:#625c54;font-weight:740;">대리수령은 불가합니다. 귀중품은 직접 보관해 주세요. 공연 종료 후 2시간 이내 돌려받으세요.<br>Proxy pickup is not allowed. Please keep valuables with you. Please pick up within 2 hours after the concert ends.</div>',
+    '<div style="border-top:1px dashed #cfc7bc;margin-top:14px;padding-top:13px;font-size:12px;line-height:1.55;color:#625c54;font-weight:740;">대리수령은 불가합니다. 귀중품은 직접 보관해 주세요. 공연 종료 후 2시간 안에 보관증을 보여주고 짐을 돌려받아 주세요.<br>Proxy pickup is not allowed. Please keep valuables with you. Please pick up within 2 hours after the concert ends.</div>',
     buildEmailOuterEndFinal_('CarryGo Seoul · Walk-in confirmed')
   ].join('');
 }
@@ -1645,7 +1645,7 @@ function buildReservationConfirmedEmailBodyFinal_(r) {
     '- 추가 캐리어: 1개당 KRW 20,000',
     '- 추가 짐: 가방 1개당 KRW 10,000 / 한화가 없으면 USD 10 현금 가능',
     '- 추가 짐은 지퍼 및 잠금장치가 있는 가방에 한합니다. 쇼핑백·비닐봉투 등 쉽게 찢어지는 짐은 맡기실 수 없습니다.',
-    '- 공연 종료 후 2시간 이내에 돌려받으세요.',
+    '- 공연 종료 후 2시간 안에 보관증을 보여주고 짐을 돌려받아 주세요.',
     '- 결제 후 고객 변심 취소 및 노쇼는 환불되지 않습니다.',
     '',
     'CarryGo',
@@ -1775,7 +1775,7 @@ function buildReservationConfirmedEmailHtmlFinal_(r) {
     buildEmailSectionStartFinal_('Reservation / 예약정보', false),
     '<div style="font-size:14px;line-height:1.62;color:#302c27;font-weight:760;">공연: ' + escapeHtmlFinal_(r.concert_title) + '<br>공연일: ' + escapeHtmlFinal_(r.concert_date + ' ' + r.concert_time) + '<br>장소: ' + escapeHtmlFinal_(r.venue) + '<br>짐 맡기는 시간: ' + escapeHtmlFinal_(formatKoreanTimeFinal_(r.pickup_time || '')) + ' · 30분 전부터 접수, 정시 마감<br>결제상태: 결제 완료</div>',
     '</div>',
-    '<div style="border-top:1px dashed #cfc7bc;margin-top:14px;padding-top:13px;font-size:12px;line-height:1.55;color:#625c54;font-weight:740;">추가 캐리어는 1개당 KRW 20,000, 추가 짐은 1개당 KRW 10,000입니다. 공연 종료 후 2시간 이내 돌려받으세요.<br>Additional suitcase: KRW 20,000 each. Extra bag: KRW 10,000 each. Please pick up within 2 hours after the concert ends.</div>',
+    '<div style="border-top:1px dashed #cfc7bc;margin-top:14px;padding-top:13px;font-size:12px;line-height:1.55;color:#625c54;font-weight:740;">추가 캐리어는 1개당 KRW 20,000, 추가 짐은 1개당 KRW 10,000입니다. 공연 종료 후 2시간 안에 보관증을 보여주고 짐을 돌려받아 주세요.<br>Additional suitcase: KRW 20,000 each. Extra bag: KRW 10,000 each. Please pick up within 2 hours after the concert ends.</div>',
     buildEmailOuterEndFinal_('CarryGo Seoul · Reservation confirmed')
   ].join('');
 }
