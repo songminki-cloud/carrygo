@@ -795,8 +795,8 @@ function buildWalkinGuideTextFinal_(reservation) {
 function buildWalkinGuideHtmlFinal_(reservation) {
   const guideLink = getPickupGuideLinkFinal_(reservation.concert_date_id);
   if (guideLink) {
-    return buildEmailButtonFinal_(guideLink, '짐 맡기고 받는 곳 확인하기', 'Check pickup location', false) +
-      '<div style="font-size:12px;line-height:1.55;color:#625c54;font-weight:740;margin-top:8px;">짐 받는 위치가 달라질 수 있습니다. 받기 전 이 이메일에서 위치를 다시 확인해 주세요.<br>Pickup location may change. Please check this email again before pickup.</div>';
+    return buildEmailButtonFinal_(guideLink, '짐 맡기고 받는 곳 확인하기', 'Check location guide', false) +
+      '<div style="font-size:12px;line-height:1.55;color:#625c54;font-weight:740;margin-top:8px;">짐 받는 위치가 달라질 수 있습니다. 받기 전 위치 안내 페이지를 다시 확인해 주세요.<br>Pickup location may change. Please check the location guide again before pickup.</div>';
   }
   return '<div style="margin-top:12px;border:1.4px solid #111;border-radius:15px;background:#fff7d8;padding:13px 14px;font-size:14px;line-height:1.55;color:#111;font-weight:850;">짐 받는 곳은 현장에서 안내받은 장소를 기준으로 확인해 주세요.<br>위치나 시간이 바뀌면 이메일로 다시 안내합니다.</div>';
 }
@@ -838,7 +838,7 @@ function buildWalkinConfirmationEmailBodyFinal_(r) {
     '짐 받는 곳:',
     guide,
     '',
-    '짐 받는 위치가 달라질 수 있습니다. 받기 전 이 이메일에서 위치를 다시 확인해 주세요.',
+    '짐 받는 위치가 달라질 수 있습니다. 받기 전 위치 안내 페이지를 다시 확인해 주세요.',
     '',
     '공연 정보',
     '- 콘서트: ' + r.concert_title,
@@ -868,7 +868,7 @@ function buildWalkinConfirmationEmailBodyFinal_(r) {
     'Pickup location:',
     guide,
     '',
-    'Pickup location may change. Please check this email again before pickup.',
+    'Pickup location may change. Please check the location guide again before pickup.',
     '',
     'Concert Info',
     '- Concert: ' + r.concert_title,
@@ -903,8 +903,8 @@ function buildWalkinConfirmationEmailHtmlFinal_(r) {
     '<td width="50%" style="padding-left:4px;"><div style="border:1px solid #d8d1c7;border-radius:12px;background:#fff;padding:11px;"><div style="font-size:10px;line-height:1;font-weight:900;letter-spacing:.13em;text-transform:uppercase;color:#736f68;margin-bottom:7px;">Extra bag</div><div style="font-size:17px;line-height:1.22;font-weight:950;letter-spacing:-.025em;">' + escapeHtmlFinal_(r.expected_extra_bag_count) + '개</div></div></td>',
     '</tr></table>',
     buildEmailSectionStartFinal_('Pickup location / 짐 받는 곳', false),
-    '<div style="font-size:14px;line-height:1.62;color:#302c27;font-weight:760;"><strong>짐 받는 위치가 달라질 수 있습니다.</strong><br>받기 전 이 이메일에서 위치를 다시 확인해 주세요.</div>',
-    '<div style="font-size:12px;line-height:1.55;color:#625c54;font-weight:740;margin-top:8px;">Pickup location may change. Please check this email again before pickup.</div>',
+    '<div style="font-size:14px;line-height:1.62;color:#302c27;font-weight:760;"><strong>짐 받는 위치가 달라질 수 있습니다.</strong><br>받기 전 위치 안내 페이지를 다시 확인해 주세요.</div>',
+    '<div style="font-size:12px;line-height:1.55;color:#625c54;font-weight:740;margin-top:8px;">Pickup location may change. Please check the location guide again before pickup.</div>',
     buildWalkinGuideHtmlFinal_(r),
     '</div>',
     buildEmailSectionStartFinal_('Payment / 결제정보', false),
@@ -1308,6 +1308,7 @@ function sendPaymentInstructionEmailFinal_(reservation) {
 function buildPaymentInstructionEmailBodyFinal_(r) {
   const paymentBlock = buildPaymentInstructionEmailPaymentBlockFinal_(r);
   const amount = formatEmailAmountCodeFinal_(r);
+  const locationGuide = getDropoffGuideLinkFinal_(r.concert_date_id) || getPickupGuideLinkFinal_(r.concert_date_id);
   const method = String(r.payment_method || '').toUpperCase();
   const nextKo = method === 'BANK'
     ? '아래 이체 정보를 확인하신 뒤 6시간 이내 송금을 부탁드립니다.'
@@ -1346,7 +1347,11 @@ function buildPaymentInstructionEmailBodyFinal_(r) {
     '- 장소: ' + r.venue,
     '- 짐 맡기는 시간: ' + formatKoreanTimeFinal_(r.pickup_time || '') + ' (30분 전부터 접수, 정시 마감)',
     '',
-    '결제가 확인되면 예약확정 메일을 보내드립니다. 예약확정 메일에서 QR 코드와 짐 맡기고 받는 곳을 확인하실 수 있습니다.',
+    '짐 맡기고 받는 곳:',
+    locationGuide || '위치 안내 페이지는 예약확정 메일에서 다시 안내됩니다.',
+    '공연장으로 출발하기 전 최신 위치를 확인해 주세요.',
+    '',
+    '결제가 확인되면 예약확정 메일을 보내드립니다. 예약확정 메일에서 QR 코드와 짐 맡기고 받는 곳을 다시 확인하실 수 있습니다.',
     'After your payment is confirmed, you will receive a confirmation email with your QR code and location guide.',
     '',
     '포함 사항: 기본요금 20,000원(캐리어 1개 보관) / 선택 시간 짐 맡기기 / 공연 종료 후 2시간 이내 수령',
@@ -1360,6 +1365,7 @@ function buildPaymentInstructionEmailBodyFinal_(r) {
 function buildPaymentInstructionEmailHtmlFinal_(r) {
   const paymentBlock = buildPaymentInstructionEmailPaymentBlockFinal_(r);
   const amount = formatEmailAmountCodeFinal_(r);
+  const locationGuide = getDropoffGuideLinkFinal_(r.concert_date_id) || getPickupGuideLinkFinal_(r.concert_date_id);
   const reservationId = escapeHtmlFinal_(r.reservation_id);
   const method = String(r.payment_method || '').toUpperCase();
   const isBank = method === 'BANK';
@@ -1422,7 +1428,11 @@ function buildPaymentInstructionEmailHtmlFinal_(r) {
     buildEmailSectionStartFinal_('Reservation / 예약정보', false),
     '<div style="font-size:14px;line-height:1.62;color:#302c27;font-weight:760;">예약번호: <strong>' + reservationId + '</strong><br>공연: ' + escapeHtmlFinal_(r.concert_title) + '<br>공연일: ' + escapeHtmlFinal_(r.concert_date + ' ' + r.concert_time) + '<br>장소: ' + escapeHtmlFinal_(r.venue) + '<br>짐 맡기는 시간: ' + escapeHtmlFinal_(formatKoreanTimeFinal_(r.pickup_time || '')) + ' · 30분 전부터 접수, 정시 마감</div>',
     '</div>',
-    '<div style="border-top:1px dashed #cfc7bc;margin-top:14px;padding-top:13px;font-size:12px;line-height:1.55;color:#625c54;font-weight:740;">결제가 확인되면 예약확정 메일을 보내드립니다. 예약확정 메일에서 QR 코드와 짐 맡기고 받는 곳을 확인하실 수 있습니다.<br>After your payment is confirmed, you will receive a confirmation email with your QR code and location guide.</div>',
+    buildEmailSectionStartFinal_('Location / 위치 안내', false),
+    buildEmailButtonFinal_(locationGuide, '짐 맡기고 받는 곳 미리 확인', 'Preview location guide', true),
+    '<div style="font-size:12px;line-height:1.55;color:#625c54;font-weight:740;margin-top:8px;">공연장으로 출발하기 전 최신 위치를 확인해 주세요. 결제 확인 후 예약확정 메일에서도 다시 안내드립니다.<br>Please check the latest location before you leave. The confirmed email will include this guide again.</div>',
+    '</div>',
+    '<div style="border-top:1px dashed #cfc7bc;margin-top:14px;padding-top:13px;font-size:12px;line-height:1.55;color:#625c54;font-weight:740;">결제가 확인되면 예약확정 메일을 보내드립니다. 예약확정 메일에서 QR 코드와 짐 맡기고 받는 곳을 다시 확인하실 수 있습니다.<br>After your payment is confirmed, you will receive a confirmation email with your QR code and location guide.</div>',
     '<div style="border-top:1px dashed #cfc7bc;margin-top:14px;padding-top:13px;font-size:12px;line-height:1.55;color:#625c54;font-weight:740;">포함 사항: 기본요금 KRW 20,000(캐리어 1개 보관) / 선택 시간 짐 맡기기 / 공연 종료 후 2시간 이내 수령<br>현장 추가 결제: 추가 캐리어 1개당 KRW 20,000, 추가 짐은 가방 1개당 KRW 10,000. 한화가 없으면 추가 짐은 USD 10. 지퍼 및 잠금장치가 있는 가방에 한합니다. 쇼핑백·비닐봉투 등 쉽게 찢어지는 짐은 맡기실 수 없습니다.</div>',
     buildEmailOuterEndFinal_('CarryGo Seoul · Payment required')
   ].join('');
@@ -1602,6 +1612,13 @@ function sendReservationConfirmedEmailFinal_(reservation, qrBlob) {
 function buildReservationConfirmedEmailBodyFinal_(r) {
   const dropoffGuide = getDropoffGuideLinkFinal_(r.concert_date_id);
   const pickupGuide = getPickupGuideLinkFinal_(r.concert_date_id);
+  const sameLocationGuide = dropoffGuide && pickupGuide && dropoffGuide === pickupGuide;
+  const koLocationLines = sameLocationGuide
+    ? ['짐 맡기고 받는 곳:', dropoffGuide]
+    : ['짐 맡기는 곳:', dropoffGuide || '짐 맡기는 곳은 별도 안내 예정입니다. 위치나 시간이 바뀌면 이메일로 다시 안내합니다.', '', '짐 받는 곳:', pickupGuide || '짐 받는 곳은 별도 안내 예정입니다. 위치나 시간이 바뀌면 이메일로 다시 안내합니다.'];
+  const enLocationLines = sameLocationGuide
+    ? ['Location guide:', dropoffGuide]
+    : ['Drop-off location:', dropoffGuide || 'Drop-off location will be shared separately if needed.', '', 'Pickup location:', pickupGuide || 'Pickup location will be shared separately if needed.'];
   return [
     '예약이 확정되었습니다.',
     '',
@@ -1611,13 +1628,9 @@ function buildReservationConfirmedEmailBodyFinal_(r) {
     '예약번호: ' + r.reservation_id,
     '체크인 링크: ' + (r.qr_checkin_url || ''),
     '',
-    '짐 맡기는 곳:',
-    dropoffGuide || '짐 맡기는 곳은 별도 안내 예정입니다. 위치나 시간이 바뀌면 이메일로 다시 안내합니다.',
+    ...koLocationLines,
     '',
-    '짐 받는 곳:',
-    pickupGuide || '짐 받는 곳은 별도 안내 예정입니다. 위치나 시간이 바뀌면 이메일로 다시 안내합니다.',
-    '',
-    '공연 당일 위치가 바뀔 수 있습니다. 맡기기 전, 받기 전 각각 다시 확인해 주세요.',
+    '공연 당일 위치가 바뀔 수 있습니다. 맡기기 전, 받기 전 위치 안내 페이지에서 다시 확인해 주세요.',
     '',
     '예약 정보',
     '- 예약번호: ' + r.reservation_id,
@@ -1647,13 +1660,9 @@ function buildReservationConfirmedEmailBodyFinal_(r) {
     'Reservation ID: ' + r.reservation_id,
     'Check-in link: ' + (r.qr_checkin_url || ''),
     '',
-    'Drop-off location:',
-    dropoffGuide || 'Drop-off location will be shared separately if needed.',
+    ...enLocationLines,
     '',
-    'Pickup location:',
-    pickupGuide || 'Pickup location will be shared separately if needed.',
-    '',
-    'Locations may change on the concert day. Please check again before drop-off and before pickup.',
+    'Locations may change on the concert day. Please check the location guide again before drop-off and before pickup.',
     '',
     'Reservation Info',
     '- Reservation ID: ' + r.reservation_id,
