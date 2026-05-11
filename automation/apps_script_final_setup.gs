@@ -571,6 +571,7 @@ function createReservationFinal(body) {
     applySheetFormatsFinal_(sh, CARRYGO_SHEETS.RESERVATIONS, RESERVATIONS_HEADERS);
 
     sendPaymentInstructionEmailFinal_(rowObject);
+    notifyNewReservationToTelegramFinal_(rowObject);
 
     return {
       reservation_id: reservationId,
@@ -1198,6 +1199,49 @@ function normalizeCountFinal_(value, defaultValue) {
 
 function getScriptPropertyFinal_(key) {
   return PropertiesService.getScriptProperties().getProperty(key) || '';
+}
+
+function notifyNewReservationToTelegramFinal_(reservation) {
+  try {
+    const token = getScriptPropertyFinal_('TELEGRAM_BOT_TOKEN');
+    const chatId = getScriptPropertyFinal_('TELEGRAM_CHAT_ID') || '6302394236';
+    if (!token || !chatId) return;
+
+    const amount = formatEmailAmountCodeFinal_({
+      paid_amount: reservation.paid_amount || reservation.base_fee,
+      base_fee: reservation.base_fee,
+      currency: reservation.currency
+    });
+
+    const text = [
+      '🚨 CarryGo 신규 예약',
+      '',
+      '예약번호: ' + reservation.reservation_id,
+      '상태: 결제 확인 대기',
+      '공연: ' + reservation.concert_title,
+      '일시: ' + reservation.concert_date + ' ' + reservation.concert_time,
+      '맡기는 시간: ' + reservation.pickup_time,
+      '결제수단: ' + reservation.payment_method,
+      '금액: ' + amount,
+      '고객명: ' + reservation.customer_name,
+      '이메일: ' + reservation.customer_email,
+      '',
+      'Google Sheet에서 결제 입금 여부를 확인해 주세요.'
+    ].join('\n');
+
+    UrlFetchApp.fetch('https://api.telegram.org/bot' + token + '/sendMessage', {
+      method: 'post',
+      contentType: 'application/json',
+      muteHttpExceptions: true,
+      payload: JSON.stringify({
+        chat_id: chatId,
+        text: text,
+        disable_web_page_preview: true
+      })
+    });
+  } catch (err) {
+    console.warn('Telegram reservation notification failed: ' + String(err && err.message ? err.message : err));
+  }
 }
 
 function formatDateTimeFinal_(date) {
