@@ -354,6 +354,10 @@ function doGet(e) {
       return adminListByStatusApiFinal_(params);
     }
 
+    if (mode === 'admin_onsite_checkin') {
+      return adminOnsiteCheckinApiFinal_(params);
+    }
+
     if (mode === 'admin_update_status') {
       return adminUpdateStatusApiFinal_(params);
     }
@@ -2800,6 +2804,85 @@ function adminListByStatusApiFinal_(params) {
     return jsonFinal_({ ok: true, reservations: reservations });
   } catch (err) {
     return jsonFinal_({ ok: false, error: String(err && err.message ? err.message : err) });
+  }
+}
+
+
+function adminOnsiteCheckinApiFinal_(params) {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(10000);
+    validateAdminPinFinal_(params.admin_pin);
+    const reservationId = String(params.reservation_id || '').trim();
+    if (!reservationId) throw new Error('reservation_id is required');
+
+    const staffCode = String(params.staff_code || '').trim();
+    const staff = findStaffByCodeFinal_(staffCode);
+    if (!staff) throw new Error('Valid staff_code is required.');
+
+    const rowNo = findReservationRowFinal_(reservationId);
+    const r = getReservationObjectByRowFinal_(rowNo);
+    const currentStatus = String(r.status || '').toUpperCase();
+    const paymentStatus = String(r.payment_status || '').toUpperCase();
+    if (currentStatus === 'RETURNED') throw new Error('이미 반환완료된 예약입니다: ' + reservationId);
+    if (currentStatus === 'CANCELLED') throw new Error('취소된 예약입니다: ' + reservationId);
+    if (currentStatus === 'CHECKED_IN' || currentStatus === 'PICKED_UP') {
+      return jsonFinal_({
+        ok: true,
+        already_assigned: true,
+        reservation_id: reservationId,
+        status: currentStatus,
+        luggage_tag_numbers: normalizeLuggageTagStringFinal_(r.luggage_tag_numbers || ''),
+        onsite_due_amount: r.onsite_due_amount || 0,
+        onsite_due_display: '₩' + Number(r.onsite_due_amount || 0).toLocaleString('ko-KR')
+      });
+    }
+    if (currentStatus !== 'CONFIRMED' || paymentStatus !== 'PAID') {
+      throw new Error('입금완료/예약확정 상태만 현장접수할 수 있습니다: ' + reservationId);
+    }
+
+    const actualSuitcase = normalizeCountFinal_(params.actual_suitcase_count || r.expected_suitcase_count, 1);
+    const actualExtra = normalizeCountFinal_(params.actual_extra_bag_count || r.expected_extra_bag_count, 0);
+    if (actualSuitcase < 1) throw new Error('actual_suitcase_count must be at least 1');
+    const onsiteDue = Math.max(0, actualSuitcase - 1) * 20000 + actualExtra * 10000;
+    const existingTags = normalizeLuggageTagStringFinal_(r.luggage_tag_numbers || '');
+    const tags = existingTags || nextLuggageTagNumbersFinal_(actualSuitcase + actualExtra, r.concert_id);
+
+    const sh = getSheetFinal_(CARRYGO_SHEETS.RESERVATIONS);
+    const now = new Date();
+    setReservationValueFinal_(sh, rowNo, 'expected_suitcase_count', actualSuitcase);
+    setReservationValueFinal_(sh, rowNo, 'expected_extra_bag_count', actualExtra);
+    setReservationValueFinal_(sh, rowNo, 'actual_suitcase_count', actualSuitcase);
+    setReservationValueFinal_(sh, rowNo, 'actual_extra_bag_count', actualExtra);
+    setReservationValueFinal_(sh, rowNo, 'onsite_due_amount', onsiteDue);
+    setReservationValueFinal_(sh, rowNo, 'onsite_cash_received', 'YES');
+    setReservationValueFinal_(sh, rowNo, 'onsite_tag_attached', 'YES');
+    setReservationValueFinal_(sh, rowNo, 'onsite_photo_taken', 'YES');
+    setReservationValueFinal_(sh, rowNo, 'onsite_checkin_completed_at', now);
+    setReservationValueFinal_(sh, rowNo, 'onsite_payment_method', onsiteDue > 0 ? 'CASH' : 'NONE');
+    setReservationValueFinal_(sh, rowNo, 'luggage_tag_numbers', tags);
+    setReservationValueFinal_(sh, rowNo, 'onsite_staff', staff.staff_id || staff.staff_name || '');
+    setReservationValueFinal_(sh, rowNo, 'onsite_consent_flags', mergeNoteFinal_(r.onsite_consent_flags || '', 'HARDCOPY_CONFIRMED=YES; ADMIN_ONSITE_CHECKIN_BY=' + (staff.staff_id || staff.staff_name || 'STAFF')));
+    setReservationValueFinal_(sh, rowNo, 'status', 'CHECKED_IN');
+    setReservationValueFinal_(sh, rowNo, 'picked_up_at', now);
+    setReservationValueFinal_(sh, rowNo, 'picked_up_by', staff.staff_id || staff.staff_name || 'STAFF');
+
+    return jsonFinal_({
+      ok: true,
+      reservation_id: reservationId,
+      status: 'CHECKED_IN',
+      already_assigned: !!existingTags,
+      luggage_tag_numbers: tags,
+      actual_suitcase_count: actualSuitcase,
+      actual_extra_bag_count: actualExtra,
+      onsite_due_amount: onsiteDue,
+      onsite_due_display: '₩' + Number(onsiteDue || 0).toLocaleString('ko-KR'),
+      onsite_cash_received: 'YES'
+    });
+  } catch (err) {
+    return jsonFinal_({ ok: false, error: String(err && err.message ? err.message : err) });
+  } finally {
+    try { lock.releaseLock(); } catch (e) {}
   }
 }
 
