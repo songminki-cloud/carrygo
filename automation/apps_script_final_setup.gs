@@ -14,7 +14,8 @@ const CARRYGO_SHEETS = {
   CONCERTS: 'concerts',
   CONCERT_DATES: 'concert_dates',
   RESERVATIONS: 'reservations',
-  STAFF: 'staff'
+  STAFF: 'staff',
+  LOCATIONS: 'locations'
 };
 
 const CONCERTS_HEADERS = [
@@ -27,6 +28,25 @@ const CONCERTS_HEADERS = [
   'created_at',
   'updated_at',
   'city'
+];
+
+const LOCATIONS_HEADERS = [
+  'location_id',
+  'location_name',
+  'venue_aliases',
+  'display_address',
+  'dropoff_place_name',
+  'pickup_place_name',
+  'dropoff_guide_text',
+  'pickup_guide_text',
+  'naver_map_url',
+  'google_map_url',
+  'latitude',
+  'longitude',
+  'is_active',
+  'updated_at',
+  'updated_by',
+  'note'
 ];
 
 const CONCERT_DATES_HEADERS = [
@@ -116,7 +136,8 @@ const FINAL_SCHEMA = [
   { name: CARRYGO_SHEETS.CONCERTS, headers: CONCERTS_HEADERS },
   { name: CARRYGO_SHEETS.CONCERT_DATES, headers: CONCERT_DATES_HEADERS },
   { name: CARRYGO_SHEETS.RESERVATIONS, headers: RESERVATIONS_HEADERS },
-  { name: CARRYGO_SHEETS.STAFF, headers: STAFF_HEADERS }
+  { name: CARRYGO_SHEETS.STAFF, headers: STAFF_HEADERS },
+  { name: CARRYGO_SHEETS.LOCATIONS, headers: LOCATIONS_HEADERS }
 ];
 
 /**
@@ -352,6 +373,14 @@ function doGet(e) {
 
     if (mode === 'admin_list') {
       return adminListByStatusApiFinal_(params);
+    }
+
+    if (mode === 'admin_locations') {
+      return adminLocationsApiFinal_(params);
+    }
+
+    if (mode === 'admin_update_location') {
+      return adminUpdateLocationApiFinal_(params);
     }
 
     if (mode === 'admin_onsite_checkin') {
@@ -1784,7 +1813,12 @@ function getVenueGuideLinkByConcertDateFinal_(concertDateId) {
   if (!dateRow) return '';
   const concertRows = readSheetObjectsFinal_(CARRYGO_SHEETS.CONCERTS, CONCERTS_HEADERS);
   const concertRow = concertRows.find(item => String(item.concert_id) === String(dateRow.concert_id));
-  const venue = String(concertRow && concertRow.venue || '').toLowerCase();
+  const venueRaw = String(concertRow && concertRow.venue || '');
+  try {
+    const location = findLocationByVenueFinal_(venueRaw);
+    if (location) return String(location.naver_map_url || location.google_map_url || '');
+  } catch (e) {}
+  const venue = venueRaw.toLowerCase();
   if (venue.indexOf('올림픽') >= 0 || venue.indexOf('olympic') >= 0 || venue.indexOf('kspo') >= 0) {
     return 'https://www.carrygoseoul.com/location/olympic-park/';
   }
@@ -2807,6 +2841,100 @@ function adminListByStatusApiFinal_(params) {
   }
 }
 
+
+
+function ensureLocationsSheetFinal_() {
+  const ss = SpreadsheetApp.openById(CARRYGO_SHEET_ID);
+  const sh = getOrCreateSheetFinal_(ss, CARRYGO_SHEETS.LOCATIONS);
+  writeHeadersPreserveRows_(sh, LOCATIONS_HEADERS);
+  applySheetFormatsFinal_(sh, CARRYGO_SHEETS.LOCATIONS, LOCATIONS_HEADERS);
+  return sh;
+}
+
+function adminLocationsApiFinal_(params) {
+  try {
+    validateAdminPinFinal_(params.admin_pin);
+    ensureLocationsSheetFinal_();
+    const rows = readSheetObjectsFinal_(CARRYGO_SHEETS.LOCATIONS, LOCATIONS_HEADERS)
+      .filter(row => String(row.location_id || '').trim())
+      .map(row => locationSummaryFinal_(row));
+    return jsonFinal_({ ok: true, locations: rows });
+  } catch (err) {
+    return jsonFinal_({ ok: false, error: String(err && err.message ? err.message : err) });
+  }
+}
+
+function adminUpdateLocationApiFinal_(params) {
+  try {
+    validateAdminPinFinal_(params.admin_pin);
+    const locationId = String(params.location_id || '').trim();
+    if (!locationId) throw new Error('location_id is required');
+    const sh = ensureLocationsSheetFinal_();
+    const rows = readSheetObjectsFinal_(CARRYGO_SHEETS.LOCATIONS, LOCATIONS_HEADERS);
+    let rowNo = -1;
+    rows.forEach((row, idx) => {
+      if (String(row.location_id || '') === locationId) rowNo = idx + 2;
+    });
+    if (rowNo < 0) rowNo = sh.getLastRow() + 1;
+    const now = new Date();
+    const obj = {
+      location_id: locationId,
+      location_name: String(params.location_name || '').trim(),
+      venue_aliases: String(params.venue_aliases || '').trim(),
+      display_address: String(params.display_address || '').trim(),
+      dropoff_place_name: String(params.dropoff_place_name || '').trim(),
+      pickup_place_name: String(params.pickup_place_name || '').trim(),
+      dropoff_guide_text: String(params.dropoff_guide_text || '').trim(),
+      pickup_guide_text: String(params.pickup_guide_text || '').trim(),
+      naver_map_url: String(params.naver_map_url || '').trim(),
+      google_map_url: String(params.google_map_url || '').trim(),
+      latitude: String(params.latitude || '').trim(),
+      longitude: String(params.longitude || '').trim(),
+      is_active: String(params.is_active || 'TRUE').toUpperCase() === 'FALSE' ? 'FALSE' : 'TRUE',
+      updated_at: now,
+      updated_by: 'ADMIN',
+      note: String(params.note || '').trim()
+    };
+    if (!obj.location_name) throw new Error('location_name is required');
+    const values = LOCATIONS_HEADERS.map(h => obj[h] || '');
+    sh.getRange(rowNo, 1, 1, LOCATIONS_HEADERS.length).setValues([values]);
+    return jsonFinal_({ ok: true, location: locationSummaryFinal_(obj) });
+  } catch (err) {
+    return jsonFinal_({ ok: false, error: String(err && err.message ? err.message : err) });
+  }
+}
+
+function locationSummaryFinal_(row) {
+  return {
+    location_id: row.location_id,
+    location_name: row.location_name,
+    venue_aliases: row.venue_aliases,
+    display_address: row.display_address,
+    dropoff_place_name: row.dropoff_place_name,
+    pickup_place_name: row.pickup_place_name,
+    dropoff_guide_text: row.dropoff_guide_text,
+    pickup_guide_text: row.pickup_guide_text,
+    naver_map_url: row.naver_map_url,
+    google_map_url: row.google_map_url,
+    latitude: row.latitude,
+    longitude: row.longitude,
+    is_active: row.is_active,
+    updated_at: formatDateTimeMaybeFinal_(row.updated_at),
+    updated_by: row.updated_by,
+    note: row.note
+  };
+}
+
+function findLocationByVenueFinal_(venue) {
+  const target = String(venue || '').toLowerCase();
+  if (!target) return null;
+  const rows = readSheetObjectsFinal_(CARRYGO_SHEETS.LOCATIONS, LOCATIONS_HEADERS);
+  return rows.find(row => {
+    if (!isActiveFinal_(row.is_active)) return false;
+    const aliases = String(row.venue_aliases || row.location_name || '').split(',').map(v => v.trim().toLowerCase()).filter(Boolean);
+    return aliases.some(alias => target.indexOf(alias) >= 0 || alias.indexOf(target) >= 0);
+  }) || null;
+}
 
 function adminOnsiteCheckinApiFinal_(params) {
   const lock = LockService.getScriptLock();
